@@ -1,9 +1,0 @@
-
-int add(int a, int b) {
-  return a + b;
-}
-
-template <class T>
-int substract(int a, int b) {
-  return a - b;
-}

@@ -1,8 +1,0 @@
-%module example
-%{
-  extern double my_var;
-  extern int add(int a, int b);
-%}
-
-extern int add(int a, int b);
-extern double my_var;

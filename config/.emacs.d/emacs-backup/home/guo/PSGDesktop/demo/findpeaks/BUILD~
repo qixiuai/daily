@@ -1,6 +1,0 @@
-
-cc_binary(
-    name = "demo_findpeaks",
-    srcs = ["findpeaks_demo.cc"],
-    deps = ["//psg/lib:findpeaks"],
-)

@@ -1,9 +1,0 @@
-#include <iostream>
-
-int main() {
-
-  bool is_int = false;
-  int a;
-  a = is_int;
-  std::cout << is_int << std::endl;
-}

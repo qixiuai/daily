@@ -1,9 +1,0 @@
-<head>
-  <title> BCG Algorithm Visual </title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="Visual.js"></script>
-</head>
-
-<body>
-  <div id="myDiv"></div>
-</body>

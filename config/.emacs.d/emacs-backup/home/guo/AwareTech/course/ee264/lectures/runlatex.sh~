@@ -1,9 +1,0 @@
-#!/bin/bash
-
-latex_files=$(ls *.tex)
-echo $latex_files
-
-for file in $latex_files ; do
-    echo $file
-#    pdflatex $file
-done

@@ -1,5 +1,0 @@
-cc_binary(
-    name = "EventTest",
-    srcs = ["main.cc"],
-    copts = ["-std=c++17", "-I.", "-stdlib=libc++", "-L/home/guo/Github/llvm_svn/build/lib"],
-)

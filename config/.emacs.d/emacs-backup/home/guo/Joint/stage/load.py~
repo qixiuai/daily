@@ -1,9 +1,0 @@
-
-import numpy as np
-import tensorflow as tf
-
-imported = tf.saved_model.load("saved_models")
-
-ret = imported.signatures["serving_default"](tf.constant(np.random.randn(1,6000,5), dtype=tf.float32))
-
-print(ret)

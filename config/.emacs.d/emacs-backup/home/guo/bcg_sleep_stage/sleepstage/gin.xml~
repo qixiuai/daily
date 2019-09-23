@@ -1,9 +1,0 @@
-
-<config>
-  <Dataset.data_dir>
-    "/home/guo/bcg_sleep_stage/data"
-  </Dataset.data_dir>
-  <Dataset.use_two_stages_labels>
-    False
-  </Dataset.use_two_stages_labels>
-</config>

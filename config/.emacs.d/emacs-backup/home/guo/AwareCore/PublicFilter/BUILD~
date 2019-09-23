@@ -1,6 +1,0 @@
-cc_binary(
-    name = "filter.dll",
-    srcs = ["filter.c"],
-    features = ["windows_export_all_symbols"],
-    linkshared = 1,
-)

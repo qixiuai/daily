@@ -1,9 +1,0 @@
-
-#include <iostream>
-
-int main() {
-  int a = 1/2;
-  std::cerr << a << '\n';
-  
-  return 0;
-}

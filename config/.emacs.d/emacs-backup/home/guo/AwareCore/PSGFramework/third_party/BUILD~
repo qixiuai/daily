@@ -1,9 +1,0 @@
-cc_library(
-    name = "boost",
-    hdrs = glob(["boost/**/*.hpp"]),
-)
-
-cc_library(
-    name = "eigen",
-    hdrs = glob(["eigen-git-mirror/**/*.h"]),
-)

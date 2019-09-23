@@ -1,6 +1,0 @@
-
-for i in {0..9}
-do
-    echo ${i}
-  #wget http://web.stanford.edu/class/cs166/lectures/0${i}/Slides0${i}.pdf
-done

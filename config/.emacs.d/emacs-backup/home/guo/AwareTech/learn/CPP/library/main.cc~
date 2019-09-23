@@ -1,9 +1,0 @@
-#include <iostream>
-
-#include "header.h"
-
-int main() {
-  MyClass myclass;
-  std::cout << myclass.pubFunc();
-  return 0;
-}

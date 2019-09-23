@@ -1,8 +1,0 @@
-#!/bin/bash
-
-bazel run :pai_main -- \
-      --data_dir=/home/guo/physio/dl/tfrecords/isruc.tfrecords \
-      --model_dir=/home/guo/physio/dl/models \
-      --batch_size=32 --num_parallel_calls=12 \
-      --train_steps=100000 --enable_time_history=false \
-      --mode=eval

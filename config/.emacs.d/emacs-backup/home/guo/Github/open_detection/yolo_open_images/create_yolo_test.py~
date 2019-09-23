@@ -1,9 +1,0 @@
-
-from glob import glob
-
-files = glob("/home/guo/data/kaggle/OpenImage2019/raw/test/*.jpg")
-with open("yolo_test.txt", "w") as f:
-    for filepath in files:
-        f.write(filepath+"\n")
-
-

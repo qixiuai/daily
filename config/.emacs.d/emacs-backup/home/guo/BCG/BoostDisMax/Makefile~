@@ -1,7 +1,0 @@
-
-dismax : DisMax.cc
-	clang++ $< -std=c++17 -stdlib=libc++ -I/home/guo/Github/glog/bazel-out/k8-fastbuild/bin/_virtual_includes/glog -L/home/guo/Github/llvm_svn/build/lib -L/home/guo/Github/glog/bazel-out/k8-fastbuild/bin -lglog -g -o $@
-	./dismax
-
-learn : learn.cc
-	clang++ $< -std=c++17 -stdlib=libc++ -L/home/guo/Github/llvm_svn/build/lib -g -o $@

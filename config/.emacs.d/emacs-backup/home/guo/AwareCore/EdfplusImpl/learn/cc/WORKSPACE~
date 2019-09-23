@@ -1,8 +1,0 @@
-workspace(name = "learn")
-
-http_archive(
-    name = "com_google_protobuf",
-    sha256 = "ced3d566b14ccee1e6e96a2cc8dc7c4a3e92bf2d637c3ccf794d018d860647f4",
-    strip_prefix = "protobuf-cpp-3.6.1",
-    urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-cpp-3.6.1.zip"],
-)

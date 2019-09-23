@@ -1,6 +1,0 @@
-#!/bin/env bash
-
-proto_path=/home/guo/PSG/python/psg/protos
-python_out=/home/guo/PSG/python/psg
-python -m grpc_tools.protoc -I${proto_path} --python_out=${python_out} \
-       --grpc_python_out=${python_out} ${proto_path}/psg.proto

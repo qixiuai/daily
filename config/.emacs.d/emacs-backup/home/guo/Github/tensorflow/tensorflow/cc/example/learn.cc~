@@ -1,8 +1,0 @@
-#include <iostream>
-#include <string>
-#include "third_party/Eigen/Dense"
-
-int main() {
-
-  return 0;
-}

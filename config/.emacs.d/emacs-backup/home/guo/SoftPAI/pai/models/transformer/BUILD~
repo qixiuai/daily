@@ -1,5 +1,0 @@
-
-py_library(
-    name = "transformer",
-    srcs = ["model_params.py"],
-)

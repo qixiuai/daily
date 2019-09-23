@@ -1,7 +1,0 @@
-ignore_index = []
-classes = label_to_index.keys()
-for cls in classes:
-    cls = cls.strip()
-    if cls in TARGET_CLASSES:
-        continue
-    ignore_index.append(label_to_index[cls])

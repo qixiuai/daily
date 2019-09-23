@@ -1,6 +1,0 @@
-cc_library(
-    name = "spdlog",
-    hdrs = glob(["spdlog/include/spdlog/**/*.h"]),
-    copts = ["-Ithird_party/spdlog/include/"],
-    visibility = ["//visibility:public"],
-)

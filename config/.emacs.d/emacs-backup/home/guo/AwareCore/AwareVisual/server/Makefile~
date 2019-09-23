@@ -1,4 +1,0 @@
-run:
-	rm -rf /tmp/bcg
-	mkfifo /tmp/bcg
-	python server.py > /tmp/bcg

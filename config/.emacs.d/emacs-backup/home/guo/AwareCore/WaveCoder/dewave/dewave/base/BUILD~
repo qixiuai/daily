@@ -1,6 +1,0 @@
-cc_library(
-    name = "base",
-    srcs = glob(["*.c"]),
-    hdrs = glob(["*.h"]),
-    visibility = ["//dewave:__pkg__"]
-)

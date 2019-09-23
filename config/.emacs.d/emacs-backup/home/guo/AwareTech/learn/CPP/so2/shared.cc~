@@ -1,7 +1,0 @@
-#include "shared.h"
-namespace SS {
-  template<class T>
-  void myclass<T>::setx(int newx) { myx = newx; }
-  template<class T>
-  T  myclass<T>::getx() { return myx; }
-}

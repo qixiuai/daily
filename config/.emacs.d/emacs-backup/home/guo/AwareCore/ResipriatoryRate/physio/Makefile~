@@ -1,7 +1,0 @@
-run_RespRate : findpeaks.cc
-	clang++ $< -o $@ -g -std=c++17
-#	./$@
-run_findpeaks : findpeaks.cc
-	clang++ $< -o $@ -g -std=c++17
-	./$@ > txt
-	python plot.py

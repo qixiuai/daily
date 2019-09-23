@@ -1,6 +1,0 @@
-cc_library(
-    name = "ProtoDataType",
-    srcs = glob(["**/*.cc"]),
-    hdrs = glob(["**/*.h"]),
-    copts = ["-std=c++17", "-I.", "-stdlib=libc++", "-L/home/guo/Github/llvm_svn/build/lib"],
-)

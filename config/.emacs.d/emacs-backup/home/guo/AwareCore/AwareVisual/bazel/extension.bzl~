@@ -1,3 +1,0 @@
-load("//pkg:empty.bzl", empty)
-
-#def macro()

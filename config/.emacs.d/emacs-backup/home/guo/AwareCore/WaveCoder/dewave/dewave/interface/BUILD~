@@ -1,5 +1,0 @@
-cc_library(
-    name = "interface",
-    srcs = glob(["*.c"]),
-    hdrs = glob(["*.h"]),
-)

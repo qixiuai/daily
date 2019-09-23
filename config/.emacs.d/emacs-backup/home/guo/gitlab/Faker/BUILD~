@@ -1,5 +1,0 @@
-
-cc_library(
-    name = "boost",
-    hdrs = glob(["boost/**/*.hpp"]),
-)

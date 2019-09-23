@@ -1,7 +1,0 @@
-#!/bin/bash
-
-tf_model_dir=/home/guo/Github/tensorflow_models/research/object_detection/
-python ${tf_model_dir}/model_main.py \
-       --model_dir=models/ \
-       --pipeline_config_path=faster_rcnn_resnet101_pets.config
-       

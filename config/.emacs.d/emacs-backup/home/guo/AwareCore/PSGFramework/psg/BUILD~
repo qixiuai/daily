@@ -1,6 +1,0 @@
-cc_binary(
-    name = 'psg',
-    srcs = glob(['**/*.cc']),
-    hdrs = glob(['**/*.h']),
-    copts = ['-std=c++17', '-g'],
-)

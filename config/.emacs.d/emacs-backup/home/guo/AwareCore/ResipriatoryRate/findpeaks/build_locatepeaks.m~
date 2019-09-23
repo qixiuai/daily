@@ -1,6 +1,0 @@
-
-% load bcg data
-data = csvread('../Wu/chest.txt');
-data = data(1:500);
-codegen -c -d locatepeaks -config coder.config('lib') locatepeaks.m -args {data}
-quit

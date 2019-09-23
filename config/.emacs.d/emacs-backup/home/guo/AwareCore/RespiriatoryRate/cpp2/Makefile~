@@ -1,2 +1,0 @@
-run_peaks : run_peaks.cc findpeaks.cc findpeaks.h utils.h
-	clang++ run_peaks.cc findpeaks.cc findpeaks.h utils.h -std=c++17 -g -o $@

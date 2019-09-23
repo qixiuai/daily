@@ -1,3 +1,0 @@
-AutomaticSleepStageClassification.pdf: AutomaticSleepStageClassification.tex
-	pdflatex $<
-	evince $@

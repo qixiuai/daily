@@ -1,4 +1,0 @@
-proto_library(
-    name = "addressbook",
-    srcs = ["addressbook.proto"],
-)

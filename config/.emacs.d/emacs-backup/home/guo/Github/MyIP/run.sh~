@@ -1,7 +1,0 @@
-#!/bin/bash
-while true
-do
-    curl ip.cn > ip.txt
-    sleep 1s
-    echo "geege"
-done

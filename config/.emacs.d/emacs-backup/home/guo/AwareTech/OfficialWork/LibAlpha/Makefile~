@@ -1,4 +1,0 @@
-#FLAGS = -std=c++11
-Filter: filter.c filter.h
-	clang $(FLAGS) $< -o $@
-	./$@

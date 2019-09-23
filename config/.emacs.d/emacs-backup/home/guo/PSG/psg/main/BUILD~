@@ -1,6 +1,0 @@
-cc_binary(
-    name = "psg_server",
-    srcs = ["psg.cc", "psg.h"],
-    copts= ["-lpthread"],
-    deps = ["//third_party:libzmq"],
-)

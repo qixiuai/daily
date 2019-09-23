@@ -1,4 +1,0 @@
-FLAGS = -std=c++11 -larmdillo
-example:capi.cpp
-	g++ $< -o $@ -I/home/guo/AwareTech/software/sigpack-1.2.4/sigpack
-	./$@

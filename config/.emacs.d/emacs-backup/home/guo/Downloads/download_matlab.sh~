@@ -1,1 +1,0 @@
-rsync "https://www.baidupcs.com/rest/2.0/pcs/file?method=batchdownload&app_id=250528&zipcontent=%7B%22fs_id%22%3A%5B%22998167386529064%22%5D%7D&sign=DCb740ccc5511e5e8fedcff06b081203:0z12x9pgEIUMDGqMMH8OIJnsI8Q%3D&uid=2668408760&time=1527691105&dp-logid=3454416919828986674&dp-callid=0&vuk=2668408760&from_uk=2668408760"

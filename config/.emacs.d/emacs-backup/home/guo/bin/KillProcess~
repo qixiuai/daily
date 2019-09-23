@@ -1,5 +1,0 @@
-#!/bin/bash
-process=$1
-echo $process
-ps -ef | grep $process | awk '{print $2}'
-ps -ef | grep $process | awk '{print $2}' | xargs kill

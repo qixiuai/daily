@@ -1,6 +1,0 @@
-import sys
-old_stderr = sys.stderr
-sys.stderr = open('/dev/null', 'w')
-import keras
-sys.stderr = old_stderr
-

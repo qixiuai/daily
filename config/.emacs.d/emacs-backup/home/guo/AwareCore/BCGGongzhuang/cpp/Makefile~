@@ -1,2 +1,0 @@
-run: bcg.cc filter.cc filter.h findpeaks.cc findpeaks.h
-	clang++ bcg.cc filter.h findpeaks.cc findpeaks.h -std=c++17

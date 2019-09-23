@@ -1,2 +1,0 @@
-run: run_addressbook.cc protobuf/AddressBook.cc protobuf/AddressBook.cc
-	g++ run_addressbook.cc protobuf/AddressBook.cc protobuf/AddressBook.cc -std=c++17 -o $@

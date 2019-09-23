@@ -1,9 +1,0 @@
-
-#ifndef _PHYSIO_SIGNAL_FFT_
-#define _PHYSIO_SIGNAL_FFT_
-
-#include <vector>
-#include "fftw3.h"
-
-
-#endif

@@ -1,4 +1,0 @@
-cc_binary(
-    name = "dewave_demo",
-    srcs = glob(["dewave/**.c"]),
-)
