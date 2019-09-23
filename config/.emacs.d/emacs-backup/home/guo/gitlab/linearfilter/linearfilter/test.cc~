@@ -1,0 +1,20 @@
+#include <chrono>
+#include <string>
+#include <omp.h>
+#include <iostream>
+
+using namespace std;
+
+int main() {
+  char b[] = "/home/guo/AwareCore/PSGFilter/state-of-art/lowpass_30_b.csv";
+  auto start = std::chrono::system_clock::now();
+  int sum = 0;
+  //  #pragma omp for simd shared(sum) reduction(+:sum)
+#pragma omp simd safelen(10)
+  for (int i = 0; i < 1000000000; i+=1)
+    sum += i*(i-2);
+  auto end = std::chrono::system_clock::now();
+  auto elaps = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  std::cout << elaps << std::endl;
+  return 0;
+}

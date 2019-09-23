@@ -1,0 +1,23 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+
+\title{Framework based on Bayesian Network}
+\date{2018-9-8}
+\author{Lanting Guo}
+
+\begin{document}
+\maketitle
+\newpage
+\pagenumbering{gobble}
+
+\section{Archtecture}
+
+\section{Evaluation/Metric}
+
+\section{Parameter Learning/Hand Coding}
+
+\section{Scalability}
+
+
+\end{document}

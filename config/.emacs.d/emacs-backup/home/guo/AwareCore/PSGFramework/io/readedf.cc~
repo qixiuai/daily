@@ -1,0 +1,13 @@
+#include <iostream>
+
+#include "edflib.h"
+
+int main() {
+  using namespace std;
+  const char* edf_path = "/home/guo/AwareCore/PSGFramework/data/LLC.edf";
+  struct edf_hdr_struct hdr;
+  edfopen_file_readonly(edf_path, &hdr, 0);
+  
+  
+  return 0;
+}

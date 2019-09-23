@@ -1,0 +1,15 @@
+
+<html>
+<head>
+  <title> BCG Algorithm Visual </title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+</head>
+
+<body>
+  <div id="graph" style="height:105%", ></div>
+  <script src="Subplot.js"></script>
+</body>
+
+
+</html>

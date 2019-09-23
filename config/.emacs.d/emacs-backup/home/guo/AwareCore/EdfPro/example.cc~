@@ -1,0 +1,17 @@
+#include <iostream>
+
+#include "edfpro.pb.h"
+
+using namespace std;
+
+int main() {
+
+  EdfproFile file;
+  file.set_headr("edf header");
+  DataRecord record;
+  record.add_data(1);
+  
+  cout << hello.msg() << endl;
+  
+  return 0;
+}

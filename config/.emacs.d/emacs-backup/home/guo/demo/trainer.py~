@@ -1,0 +1,98 @@
+
+import numpy as np
+import tensorflow as tf
+tf.random.set_seed(2019)
+
+from dataset import TPDataset
+from model import get_basic_model
+
+from sklearn.metrics import roc_auc_score
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
+from tensorflow.keras.callbacks import Callback
+
+import pickle
+
+class roc_callback(TensorBoard):
+    def __init__(self, log_dir, training_data, validation_data):
+        super(roc_callback, self).__init__(log_dir)
+        self.log_dir = log_dir
+        self.x = training_data[0]
+        self.y = training_data[1]
+        self.x_val = validation_data[0]
+        self.y_val = validation_data[1]
+
+    def on_train_begin(self, logs={}):
+        TensorBoard.on_train_begin(self, logs=logs)
+        return
+
+    def on_train_end(self, logs={}):
+        return
+
+    def on_epoch_begin(self, epoch, logs={}):
+        return
+
+    def on_epoch_end(self, epoch, logs={}):
+        super(roc_callback, self).on_epoch_end(epoch, logs=logs)
+        y_pred = self.model.predict(self.x)
+        roc = roc_auc_score(self.y, y_pred)
+        y_pred_val = self.model.predict(self.x_val)
+        roc_val = roc_auc_score(self.y_val, y_pred_val)
+        print('\rroc-auc: %s - roc-auc_val: %s' %
+              (str(round(roc,4)), str(round(roc_val,4))), end=100*' '+'\n')
+        tf.summary.scalar ('roc_auc', roc)
+        tf.summary.scalar ('roc_auc_val', roc_val)
+        return
+
+    def on_batch_begin(self, batch, logs={}):
+        return
+
+    def on_batch_end(self, batch, logs={}):
+        return
+
+class Trainer(object):
+
+    def __init__(self):
+        pass
+
+    def train(self):
+        generate_data = False
+        if generate_data:
+            tpdata = TPDataset()
+            tpdata.generate_dataset()
+            train_data = tpdata.train_data
+            val_data = tpdata.val_data
+            pickle.dump(train_data, open("train_data.pkl", "wb"))
+            pickle.dump(val_data, open("val_data.pkl", "wb"))
+        else:
+            train_data = pickle.load(open("train_data.pkl", "rb"))
+            val_data = pickle.load(open("val_data.pkl", "rb"))
+        #test_data = tpdata.test_data
+        train_data = (train_data[0].reshape(-1, 200, 1), train_data[1])
+        val_data = (val_data[0].reshape(-1, 200, 1), val_data[1])
+        train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
+        val_dataset = tf.data.Dataset.from_tensor_slices(val_data)
+        
+        batch_size = 256
+        train_dataset = train_dataset.shuffle(buffer_size=1024).batch(batch_size)
+        val_dataset = val_dataset.shuffle(buffer_size=1024).batch(batch_size)
+        
+        model = get_basic_model()
+        model.compile(loss="binary_crossentropy",
+                      optimizer="adam",
+                      metrics=["binary_accuracy"])
+        model_name = "basic_4"
+        callbacks = [
+#            TensorBoard("/home/guo/data/tp/logs/"+model_name),
+            roc_callback("/home/guo/data/tp/logs/"+model_name,
+                         training_data=train_data, validation_data=val_data),
+        ]
+        model.fit(train_dataset, epochs=10000, validation_data=val_dataset,
+                  callbacks = callbacks)
+        
+    def predict(self):
+        pass
+
+
+if __name__ == '__main__':
+    trainer = Trainer()
+    trainer.train()

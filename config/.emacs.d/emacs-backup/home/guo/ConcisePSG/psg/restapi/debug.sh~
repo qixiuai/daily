@@ -1,0 +1,2 @@
+bazel run :server
+bazel run :client

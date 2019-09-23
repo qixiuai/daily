@@ -1,0 +1,43 @@
+\documentclass{article}
+
+\usepackage{amsfonts}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\usepackage[preprint]{nips2018}
+
+\title{Deep Learing Model for Sleep Stage}
+
+\author{
+  Lanting Guo \\  
+  PhysioMedTech \\
+  \texttt{guolanting@mlink.cc}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  A deep learning model for sleep stages.
+\end{abstract}
+
+\section{Goals}
+\begin{itemize}
+\item better accuray
+\item new techniques based on novel convolution, attention, MoE etc modules,
+  reguliation techniques, training methods
+\item no one takes care about transfer ablity before
+\item mutli-task, predict stages with psg (singe or multi channels ) and bcg
+\item adversary training to get away from personal, equipment, enviroment etc noises
+\end{itemize}
+
+\section{Realizations}
+
+
+
+\end{document}
+
+

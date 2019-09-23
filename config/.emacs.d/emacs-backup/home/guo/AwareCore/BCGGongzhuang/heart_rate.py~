@@ -1,0 +1,129 @@
+import peakutils
+import numpy as np
+import matplotlib.pyplot as plt
+from collections import deque
+import pdb
+
+def load_data(file_path):
+    data = np.loadtxt(file_path)
+    return data
+
+def load_parsed(file_path):
+    data = []
+    with open(file_path) as file:
+        line = file.read().strip().split(',')
+    for s in line:
+        if len(s) > 0:
+            data.append(int(s))
+    return np.asarray(data)
+
+class PeakDetector(object):
+    def __init__(self):
+        self.next_value_index = 0
+        
+        self.signal_size = 1000*20 # 20
+        self.signal = deque([], self.signal_size)
+        
+        self.update_clock = 1000
+        self.update_delay = 500
+        self.update_interval = 1000
+
+#        self.heart_ipks = deque(6)
+        self.resp_ipks  = deque([], 3)
+        
+        self.ipk_max = self.signal_size  - self.update_delay
+        self.ipk_min = self.ipk_max - self.update_interval
+        
+        self.heart_rate = 0
+        self.resp_rate  = 0
+        
+    def run(self, value):
+        self.signal.append(value)
+        self.next_value_index += 1
+        self.update_clock -= 1
+        if (self.update_clock == 0):
+            if len(self.signal) == self.signal_size:
+                self.real_run()
+            self.update_clock = self.update_interval
+        return self.heart_rate, self.resp_rate
+            
+    def real_run(self):
+        #TODO add delay
+        heart_ipks = peakutils.indexes(np.asarray(self.signal), thres=0.70, min_dist=400)
+        cycles = np.abs(np.diff(heart_ipks)).tolist()
+        
+        avg_cycle = self.get_heart_rate_from_cycles_old(cycles)
+        #avg_cycle = np.median(cycles)
+        self.heart_rate = round(60*1000/avg_cycle)
+        #pdb.set_trace()
+        #if self.heart_rate != 75:
+        #    print(self.heart_rate, avg_cycle, cycles)
+
+    def get_heart_rate_from_cycles(self, cycles):
+        """
+        """
+        mean_cycle = np.mean(cycles)
+        heart_cycles = []
+        for cycle in cycles:
+            if cycle < mean_cycle:
+                heart_cycles.append(cycle)
+        return np.median(heart_cycles)
+        
+    def get_heart_rate_from_cycles_old(self, cycles):
+        hist, bin_edges = np.histogram(cycles)
+        max_bin_ind = np.argmax(hist)
+        max_bin_upper = bin_edges[max_bin_ind+1]
+        max_bin_lower = bin_edges[max_bin_ind]
+        new_cycles = []
+        for cycle in cycles:
+            if cycle >= max_bin_lower and cycle <= max_bin_upper:
+                new_cycles.append(cycle)
+        return np.median(new_cycles)
+            
+    def classify_ipks(self, ipks):
+        heart_mask = np.zeros(ipks.size(), np.bool)
+        resp_mask  = np.zeros(ipks.size(), np.bool)
+        pks = np.asarray(self.signal)[ipks]
+        # 1. resp > heart 2. resp_cycle > heart_cycle
+        # classify peaks into two groups
+        diff1 = np.abs(np.diff(ipks))                
+        return heart_mask, resp_mask
+                    
+    def update_peak_rate(self):
+        self.resp_rate  = self.calculate_peak_rate(self.resp_ipks)
+
+    def calculate_peak_rate(self, ipks):
+        num_cycles = len(ipks) - 1
+        if num_cycles <= 0:
+            return 0
+        cycle = (ipks[-1] - ipks[0])/num_cycles
+        rpm  = 60*1000/cycle
+        return round(rpm)
+
+def runBCG(signal):
+    detector = PeakDetector()
+    for val in signal:
+        hr, rr = detector.run(val)
+        print("{},{}".format(hr, rr))
+
+def cycles_from_ipks(ipks):
+    return np.abs(np.diff(ipks))
+        
+def main(file_path):
+    data = load_data(file_path)
+    runBCG(data)
+    return
+    data = data[0000:150000]
+    ipks = peakutils.indexes(data, thres=0.70, min_dist=110)
+    cycles = cycles_from_ipks(ipks)
+    print(cycles)
+    pdb.set_trace()
+    plt.plot(data)
+    plt.plot(ipks, data[ipks], 'o')
+    plt.show()
+
+if __name__ == '__main__':
+    file_path = 'data/highpass_parsed_heart[75]-hx[35].txt'
+    main(file_path)
+
+

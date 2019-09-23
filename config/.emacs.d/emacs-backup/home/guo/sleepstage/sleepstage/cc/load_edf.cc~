@@ -1,0 +1,138 @@
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <memory>
+#include <chrono>
+#include <ctime>
+#include <sstream>
+#include <cstdlib>
+
+#include "absl/strings/string_view.h"
+#include "spdlog/spdlog.h"
+#include "insight/board.h"
+#include "load_edf.h"
+
+namespace physio {
+  namespace io {
+    EdfplusReader::EdfplusReader(const std::string& filepath) {
+      hdr = std::make_shared<struct edf_hdr_struct>();
+      int status = edfopen_file_readonly(filepath.c_str(), hdr.get(), 0);
+      if (status != 0) {
+	spdlog::error("edfopen_file_readonly error: {}", status);
+      }
+      std::string patient(hdr->patient);
+      this->patient = patient;
+      int num_signals = hdr->edfsignals;
+      signal_names.reserve(num_signals);
+      freqs.reserve(num_signals);
+      for (int i = 0; i < num_signals; i++) {
+	auto name = hdr->signalparam[i].label;
+	auto freq = hdr->signalparam[i].smp_in_datarecord;
+	signal_names.push_back(name);
+	freqs.push_back(freq);
+      }
+      struct tm timestamp;
+      timestamp.tm_year = hdr->startdate_year - 1900;
+      timestamp.tm_mon  = hdr->startdate_month - 1;
+      timestamp.tm_mday = hdr->startdate_day;
+      timestamp.tm_hour = hdr->starttime_hour;
+      timestamp.tm_min  = hdr->starttime_minute;
+      timestamp.tm_sec  = hdr->starttime_second; // add milliseconds
+      this->start_time = timestamp;
+      for (auto signal_name : signal_names) {
+	auto signal = load_signal(signal_name);
+	this->signals.push_back(signal);
+      }
+    }
+
+    std::vector<float> EdfplusReader::load_signal(std::string signal_name) {
+      int handle = hdr->handle;
+      int signal_index = 0;
+      while (true) {
+	if (signal_names[signal_index] == signal_name) {
+	  break;
+	}
+	signal_index += 1;
+      }
+      int n = hdr->signalparam[signal_index].smp_in_file;
+      int *buf = new int[n];
+      int nsamples = edfread_digital_samples(handle, signal_index, n, buf);
+      if (nsamples == -1) {
+	spdlog::error("edfread_digital_samples error");
+      }
+      std::vector<float> signal;
+      for (int i = 0; i < nsamples; i++)
+	signal.push_back(buf[i]);
+      delete[] buf;
+      return signal;
+    }
+
+    int EdfplusReader::get_signal_index(std::string signal_name) {
+      auto lb = find(signal_names.begin(), signal_names.end(), signal_name);
+      int index = lb - signal_names.begin();
+      return index;
+    }
+
+    //    std::pair<int, int> EdfplusReader::calc_indexes(std::chrono::system_clock::time_point time_of_epoch,
+    std::pair<int, int> EdfplusReader::calc_indexes(struct tm time_of_epoch,
+						    int freq) {
+      if (time_of_epoch.tm_year != start_time.tm_year) {
+	time_of_epoch.tm_year = start_time.tm_year;
+	time_of_epoch.tm_mon  = start_time.tm_mon;
+	if (time_of_epoch.tm_hour < start_time.tm_hour)
+	  time_of_epoch.tm_mday = start_time.tm_mday + 1;
+	else
+	  time_of_epoch.tm_mday = start_time.tm_mday;
+      }
+      auto tt_epoch = std::chrono::system_clock::from_time_t(std::mktime(&time_of_epoch));
+      auto tt_start = std::chrono::system_clock::from_time_t(std::mktime(&start_time));
+      auto dur_ms = std::chrono::duration_cast<std::chrono::milliseconds>(tt_epoch - tt_start).count();
+      int dur = static_cast<int>(dur_ms);
+      int start_index = dur / 1000 * freq;
+      int end_index = start_index + 30 * freq;
+      std::pair<int, int> indexes;
+      indexes.first  = start_index;
+      indexes.second = end_index;
+      return indexes;
+    }
+    
+    std::vector<float> EdfplusReader::get_epoch_for_signal(std::string signal_name,
+							   struct tm time_epoch) {
+      std::vector<float> epoch;
+      int signal_index = get_signal_index(signal_name);
+      int freq = this->freqs[signal_index];
+      std::pair<int, int> indexes = calc_indexes(time_epoch, freq);
+      spdlog::flush_on(spdlog::level::info);
+      auto signal = this->signals[signal_index];
+      for (int i = indexes.first; i < indexes.second; i++ ) {
+	epoch.push_back(signal[i]);
+      }
+      return epoch;
+    }
+
+    std::vector<std::vector<float>>
+    EdfplusReader::get_epoch(struct tm tm_epoch) {
+      std::vector<std::vector<float>> epoch;
+      for (auto signal_name : signal_names) {
+	std::vector<float> signal = get_epoch_for_signal(signal_name, tm_epoch);
+	epoch.push_back(signal);
+      }
+      return epoch;
+    }
+
+  } // end namespace io
+} // end namespace physio
+
+/*
+  int main() {
+  using namespace std;
+  const string insight_path = "/home/guo/PSG/data/insights/tfevents.pb";
+  insight::Board board(insight_path);
+  const char* edf_path = "/home/guo/AwareCore/PSG/data/LLC.edf";
+  EdfplusReader reader(edf_path);
+  auto t  = std::chrono::system_clock::to_time_t(reader.start_time);
+  std::cout << std::put_time(std::localtime(&t), "%F %T") << std::endl;      
+  return 0;
+  }
+
+*/

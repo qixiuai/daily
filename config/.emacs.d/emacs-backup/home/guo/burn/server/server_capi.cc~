@@ -1,0 +1,16 @@
+
+
+#include "burn/server/server_capi.h"
+#include "burn/server/server.h"
+
+
+DataFlowServer* on_initialze(const string_t& addr) {
+  DataFlowServer* g_httpHandler = new DataFlowServer(addr);
+  g_httpHandler->open().wait();
+  return g_httpHandler;
+}
+
+void on_shutdown(DataFlowServer* g_httpHandler) {
+  g_httpHandler->close().wait();
+  return;
+}

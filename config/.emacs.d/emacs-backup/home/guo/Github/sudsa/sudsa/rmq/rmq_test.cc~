@@ -1,0 +1,15 @@
+
+#include "sudas/rmq.h"
+
+#include "gtest/gtest.h"
+
+namespace {
+  
+  TEST(QUERY, Normal) {
+    
+  }
+
+
+}
+
+

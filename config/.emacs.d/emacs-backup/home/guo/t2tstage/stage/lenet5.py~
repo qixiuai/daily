@@ -1,0 +1,46 @@
+""" LeNet-5 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from tensor2tensor.layers import common_hparams
+from tensor2tensor.layers import common_layers
+from tensor2tensor.utils import registry
+from tensor2tensor.utils import t2t_model
+
+import tensorflow as tf
+
+
+
+@registry.register_model
+class LeNet5(t2t_model):
+
+    def body(self, features):
+        hparams = self._hparams
+        inputs = features["inputs"]
+        x = inputs
+
+        x = tf.layers.conv2d(x, 16, (5, 5), padding="SAME", name="conv1")
+        x = tf.nn.max_pool(x, [1, 2, 2, 1], (1, 2, 2, 1), "SAME", name="max_pool1")
+        x = tf.layers.conv2d(x, 16, (5, 5), padding="SAME", name="conv2")
+        x = tf.nn.max_pool(x, [1, 2, 2, 1], (1, 2, 2, 1), "SAME", name="max_pool2")
+        
+        shape = common_layers.shape_list(x)
+        x = tf.reshape(x, [-1, shape[1] * shape[2] * shape[3]])
+        x = tf.layers.dense(x, hparams.hidden_size, name="fc1")
+        x = tf.layers.dense(x, hparams.hidden_size, name="fc2")
+        return tf.expand_dims(tf.expand_dims(x, axis=1), axis=1)
+    
+
+@registry.register_hparams
+class LeNet5_base():
+    hparams = common_hparams.basic_params1()
+    hparams.learning_rate = 0.1
+    hparams.batch_size = 128
+    hparams.hidden_size = 256
+    hparams.optimizer = "Adam"
+    hparams.initializer = "uniform_unit_scaling" # He-init
+    hparams.initializer_gain = 1.0
+    hparams.weight_decay = 0.0
+    return hparams

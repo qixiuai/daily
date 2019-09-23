@@ -1,0 +1,4 @@
+build --show_timestamps
+build --color=yes
+query --keep_going
+build --cxxopts="-stdlib=libc++"

@@ -1,0 +1,43 @@
+# REST API for PSG Algorithm
+
+from flask import Flask, request
+from flask_restful import Api, Resource
+
+import algorithm
+
+import requests
+import pdb
+
+from importlib import reload
+
+app = Flask(__name__)
+api = Api(app)
+
+
+class PSGAlg(Resource):
+
+    def get(self):
+        pass
+    
+    def post(self):
+        reload(algorithm)
+        edf = request.files
+        raw = edf['file'].read()
+        try:
+            summary = algorithm.analysis(raw)
+        except:
+            summary  = {}
+        return summary
+    
+    def put(self):
+        pass
+    
+    def delete(self):
+        pass
+
+
+api.add_resource(PSGAlg, '/')
+
+
+if __name__ == '__main__':
+    app.run()

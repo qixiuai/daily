@@ -1,0 +1,74 @@
+
+<html>
+<head>
+  <title> BCG Algorithm Visual </title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+</head>
+
+<body>
+  <h5>PhysioInsight</h5>
+  <div id="graph" style="height:90%", ></div>
+</body>
+
+<script type="text/javascript">
+  var time = new Date();
+
+var signal = {
+  x: [],
+  y: [],
+  xaxis: 'xaxis',
+  yaxis: 'yaxis',
+  mode: 'lines',
+  line: {
+    color: '#80CAF6',
+    shape: 'lines',
+  },
+  name: "Signal",
+}
+
+var layout = {
+  xaxis: {
+    type: 'date',
+    showticklabels: false,
+    domain: [0, 1],
+  },
+  yaxis:{domain:[0, 1]},
+};
+
+var data = [signal];
+
+Plotly.plot('graph', data, layout);
+
+var cnt = 0;
+
+var interval = setInterval(function() {
+
+  var time = new Date();
+  var olderTime  = time.setSeconds(time.getSeconds() - 10);
+  var futureTime = time.setSeconds(time.getSeconds() + 10);
+
+  var secondsView = {
+        xaxis: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+  };
+  
+  Plotly.relayout('graph', secondsView, [0,1,2,3,4]);
+
+  new_signal = {{ signal_segment | safe}};
+  
+  var update = {
+    x: [[time]],
+    y: [new_signal],
+  };
+  
+  Plotly.extendTraces('graph', update, [0]);
+
+  if(cnt === 100) clearInterval(interval);
+}, 1000);
+
+</script>
+
+</html>

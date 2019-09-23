@@ -1,0 +1,12 @@
+
+<config>
+  <model1param_num>
+    1
+  </model1param_num>
+  <model1param_str2>
+    2
+  </model1param_str2>
+  <model1param_str>
+    "ageghe"
+  </model1param_str>
+</config>

@@ -1,0 +1,15 @@
+
+CC=g++
+INCLUDE=/home/guo/anaconda3/include/python3.6m/
+PYTHONLIB=/home/guo/anaconda3/lib
+_filter_zi.so : filter_zi.cc filter_zi.h filter_zi_wrap.cc
+	${CC} -fpic -shared  filter_zi.cc filter_zi.h filter_zi_wrap.cc -I${INCLUDE} -L${PYTHONLIB} -lpython3.6m -o $@
+
+filter_zi_wrap.cc : filter_zi.i
+	swig -c++ -python -I${INCLUDE} -o filter_zi_wrap.cc filter_zi.i
+
+run : filter_zi.cc
+	g++ $< -o $@ -std=c++17
+
+clean:
+	rm _filter_zi.so filter_zi_wrap.cc

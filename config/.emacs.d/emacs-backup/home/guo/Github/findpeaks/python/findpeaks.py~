@@ -1,0 +1,121 @@
+import numpy as np
+import plotly
+import matplotlib.pyplot as plt
+import pdb
+
+
+# not support Inf and NaN
+
+def findpeaks(signal, mph=None, mpp=None, th=None, wr=None,
+              minw=None, maxw=None, dir=None, plotsytle=None):
+    """
+    MPH: 'MinPeakHeight', MPP: 'MinPeakProminence',
+    TH: 'Threshold', WR: 'WidthReference',
+    minw: 'MinPeakWidth', maxw: 'MaxPeakWidth',
+    MPD: 'MinPeakDistance', dir: 'SortStr',
+    NP: 'NPeaks', plotstyle: 'Annotate',
+    """
+    pass
+
+
+def getAllPeaks(y):
+    iPk, iInflect = findLocalMaxima(yTemp)
+    return (iPk, iInflect)
+
+def findLocalMaxima(signal):
+    indices = np.arange(len(signal))
+    ind_neq_signal = indices[np.hstack([True, signal[0:-1] != signal[1:]])]
+    s = np.sign(np.diff(signal[ind_neq_signal]))
+    iMax = 1 + np.nonzero(np.diff(s) < 0)[0]
+#    iAny = np.nonzero(np.hstack([True, s[:-1] != s[1:]]))[0]
+    iPk  = iMax
+#    iInflect = iAny
+    return iPk
+    
+def removePeaksBelowMinPeakHeight(signal, iPk, Ph, widthRef):
+    if not np.empty(iPk):
+        iPk = iPk[Y[iPk] > Ph]
+        if isempty(iPk) && widthRef not 'halfheight':
+            print("signal:findpeaks:largeMinPeakHeight")
+    return iPk
+
+def removePeaksBelowThreshold(signal, iPk, Th):
+    base = np.max(signal[iPk-1], signal[iPk+1])
+    iPk = iPk[signal[iPk]-base >= Th]
+    return iPk
+    
+def findExtents(y, x, iPk, minP, minW, maxW, refW):
+    bPk, iLB, iRB = getPeakBase(signal, iPk)
+    iPk, bPk, iLB, iRB = removePeaksBelowMinPeakProminence(
+        sginal, iPk, bPk, iLB, iRB, minP)
+    wxPk, iLBh, iRBh = getPeakWidth(signal, x, iPk, bPk, iLB, iRB, refW)
+    # combineFullPeaks()
+    removePeaksOutsideWidth(iPk, bPk, bxPk, byPk, wxPk, minW, maxW)
+
+def getPeakBase(signal, iPk):
+    iLeftBase, iLeftSaddle = getLeftBase(signal, iPk)
+    iRightBase, iRightSaddle = getLeftBase(signal, flipud(iPk))
+    iRightBase = flipud(iRightBase)
+    iRightSaddle = flipud(iRightSaddle)
+    peakBase = np.max(signal[iLeftBase], signal[iRightBase])
+    return peakBase, iLeftSaddle, iRightSaddle
+
+def getLeftBase(signal, iPk, iInflect):
+    iBase   = np.zeros_like(iPk)
+    
+    peak    = np.zeros_like(iPk)
+    valley  = np.zeros_like(iPk)
+    iValley = np.zeros_like(iPk)
+
+    n = 0
+    i = j = k = 1
+    while (k <= len(iPk)):
+        p = signal[iInflect[i]]
+        while (n>0 and peak[n]<p):
+            pass
+        while (n>0 and peak[n]<=p):
+            pass
+        n = n + 1
+        peak[n] = p
+        valley[n] = v
+        iValley[n] = iv
+        if iInflect[i] == iPk[k]:
+            iBase[k] = iv
+            k += 1
+        i += 1
+        j += 1
+    return iBase
+
+def flipud(x):
+    pass
+    
+def findPeaksSeparatedByMoreThanMinPeakDistance(y, x, iPk, minD):
+    pass
+
+def orderPeaks(y, iPk, idx, sortDir):
+    pass
+
+def keepAtMostNpPeaks(idx, maxN):
+    pass
+
+def fetchPeakExtents(idx, bPk, bxPk, byPk, wxPk):
+    pass
+
+
+def load_data(file):
+    data = np.loadtxt(signal_file, delimiter=';')
+    signal = data[:,0]
+    
+    plt.plot(signal)
+    plt.show()
+
+def main(signal_file):
+    load_data(signal_file)
+    
+if __name__ == '__main__':
+    #signal_file = "../data/abd.txt"
+    signal = np.random.random(10)
+    ipks, iInflect = findLocalMaxima(signal)
+    plt.plot(signal)
+    plt.show()
+#    main(signal_file)

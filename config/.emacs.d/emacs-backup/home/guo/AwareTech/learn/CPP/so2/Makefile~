@@ -1,0 +1,9 @@
+libshared.so: shared.cc
+#	clang++ -fPIC -shared  -Wl,-soname,libshared.so -o libshared.so
+	clang++ -fPIC -shared $< -o $@
+
+main: main.cc
+	clang++ main.cc -lshared -I. -L. -o main
+
+clean:
+	rm *.so main

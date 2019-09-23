@@ -1,0 +1,20 @@
+
+import tensorflow as tf
+
+import model_lib
+
+from absl import app
+
+
+def main(unused_args):
+    del unused_args
+    data_dir = "/home/guo/ballet/data/"
+    model_dir = data_dir + "model/"
+    config = tf.estimator.RunConfig(model_dir=model_dir)
+    train_and_eval_dict = model_lib.create_estimator_and_inputs(run_config=config)
+    
+    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+
+    
+if __name__ == '__main__':
+    app.run(main)

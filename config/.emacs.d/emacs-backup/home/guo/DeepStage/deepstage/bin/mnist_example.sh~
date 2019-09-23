@@ -1,0 +1,15 @@
+#!/bin/bash
+
+rm -rf ~/data/tmp/ds_data/mnist
+rm -rf ~/data/sleepstage/sleepbrain/tmp/ds_train/mnist
+
+export PYTHONPATH="/home/guo/DeepStage"
+ds-trainer \
+    --generate_data \
+    --data_dir=~/data/tmp/ds_data/mnist \
+    --output_dir=~/data/sleepstage/sleepbrain/tmp/ds_train/mnist \
+    --problem=image_mnist \
+    --model=basic_fc_relu \
+    --hparams_set=basic_fc_small \
+    --train_steps=50000 \
+    --eval_steps=100000

@@ -1,0 +1,148 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+MAX_DIVID_LV = 7
+DEBUG = False
+'''
+MAX_DIVID_LV: 最大处理地址级别
+'''
+# node
+class TreeNode(object):
+    
+    def __init__(self,ID,level,levelLen,parentID = None,childrenList = None):
+        self.ID = ID
+        self.level = level
+        self.levelLen = levelLen
+        self.parentID = parentID
+        self.childrenList = childrenList
+        if self.childrenList == None:
+            self.childrenList = {}
+
+#    child 为 key
+    def add_child(self,child):
+        ID = child
+        if self.childrenList.get(ID) != None:
+            self.childrenList[ID] += 1
+        else:
+            self.childrenList[ID] = 1
+
+
+class AddrTree(object):
+    
+    def __init__(self, root_node = None):
+        self.root_node = root_node
+        self.k = 0
+        self.index = {}
+        self.nodes = {}
+        self.inverseIndex = {}
+        
+    # 搜索待增加节点的位置
+    def find_loc(self, nodeName, preUnit):
+        nodeID = self._get_index(nodeName)
+        if preUnit is None:
+            return self.nodes[nodeID].parentID if nodeID is not None else None
+        preID = preUnit[0]
+        if self.nodes[preID].childrenList.get(nodeID) is not None:
+            return preID
+        if nodeID is not None:
+            parent = self.nodes[nodeID].parentID
+            return parent
+        return None
+
+    def add_node(self, currentUnit, preUnit):
+        '''
+        增加一个节点
+        先寻找增加节点的位置，然后增加一个节点
+        
+            Args:
+                currentUnit: 当前地址单元
+                preUnit: 前一个地址单元
+        
+            Returns:
+                False: 增加失败则返回 False
+                nodeID: 增加成功则返回增加节点的 ID
+        '''
+        nodeName = currentUnit[0]
+        nodeLv = currentUnit[1]
+        nodeLvLen = currentUnit[2]
+        
+        if preUnit is not None and self.index.get(preUnit[0]) is None:
+            return False
+
+        if nodeLv >= MAX_DIVID_LV:
+            parentID = None
+        else:
+            parentID = self.find_loc(nodeName, preUnit)
+
+        if parentID == None:
+            if preUnit != None:
+                parentID = preUnit[0]
+        
+        # 如果地址树里面没有该节点，则增加该节点
+        isCreate = False
+        nodeID = None
+        if nodeLv < MAX_DIVID_LV:
+            nodeID = self._get_index(nodeName)
+        else:
+            nodeID = self._get_key(nodeName, self.nodes[parentID].childrenList)
+        if nodeID == None:
+            isCreate = True
+                
+        if isCreate:
+            self.k += 1
+            nodeID = self.k
+            self.index[nodeID] = nodeName
+            node = TreeNode(nodeID,nodeLv,nodeLvLen,parentID)
+            self.nodes[nodeID] = node
+            if nodeLv < MAX_DIVID_LV:
+                self.inverseIndex[nodeName] = nodeID
+                
+        # 分别加入到父节点和前地址单元的孩子中u        
+        if preUnit is not None:
+            preID = preUnit[0]
+            self.nodes[preID].add_child(nodeID)
+        
+        # 如果该节点之前已经存在，则要判断是否更换父节点
+        if nodeLv < MAX_DIVID_LV:
+            if parentID != None and preUnit != None:
+                parentOld = self.nodes[nodeID].parentID
+                childNumOld = self.nodes[parentOld].childrenList[nodeID]
+                parentNew = preUnit[0]
+                childNumNew = self.nodes[parentNew].childrenList[nodeID]
+                if childNumOld < childNumNew:
+                    self.nodes[nodeID].parentID = parentNew
+        return(nodeID)
+    
+    def _get_index(self, v):
+        '''
+        取插入树里的节点ID号
+            Args:
+                nodes: 节点 TreeNodes类对象
+        '''
+        return(self.inverseIndex.get(v))
+    
+    def _get_key(self, v, oneDict):
+        '''
+        根据取出的节点ID号找到对应的节点名称
+        '''
+        for k,_ in oneDict.items():
+            if self.index[k] == v:
+                return(k)
+        return(None)
+
+#    unrecode
+    # 取出地址树中相对应的节点，如果没有就返回 None
+    def get_node(self,addr_unit):
+        if addr_unit in self.nodes.keys():
+            node = self.nodes[addr_unit]
+            #if node.level <= 3:
+                #return node
+            return node
+        return None
+
+
+if __name__ == '__main__':
+    addrTree = AddrTree()

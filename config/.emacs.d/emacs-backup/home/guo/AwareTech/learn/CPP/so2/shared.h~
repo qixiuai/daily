@@ -1,0 +1,11 @@
+namespace SS{
+  template <class T>
+    class myclass {
+    T myx;
+ 
+  public:
+    myclass() { myx=0; }
+    void setx(int newx);
+    T  getx();
+  };
+}

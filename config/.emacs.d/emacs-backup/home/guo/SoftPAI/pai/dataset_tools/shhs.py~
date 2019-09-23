@@ -1,0 +1,147 @@
+
+""" SHHS Dataset Interface """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import pdb
+import untangle
+import numpy as np
+
+from collections import Counter
+from glob import glob
+from edfplus import Edfplus
+from sklearn.model_selection import train_test_split
+from tqdm import tqdm
+
+
+SHHS_DIR = "/home/guo/physio/database/SHHSSleepData/shhs/polysomnography/"
+SHHS_EDF_DIR = SHHS_DIR + "edfs/"
+SHHS_ANNO_DIR = SHHS_DIR + "annotations-events-nsrr/"
+
+
+def load_labels_from_xml(xml_path):
+    obj = untangle.parse(xml_path)
+    stages = []
+    for event in obj.PSGAnnotation.ScoredEvents.ScoredEvent:
+        if "Stages" in event.EventType.cdata:
+            dur = event.Duration.cdata
+            dur = int(float(dur))
+            label = int(event.EventConcept.cdata.split('|')[1])
+            stages.extend([label]*dur)
+    return stages
+
+
+class SHHS(object):
+
+    def __init__(self, mode="train", step=30, channels=[]):
+        self.mode = mode
+        self.subjects = None
+        self.step = step
+        self.channels = channels
+        self.generate_dataset()
+
+    def generate_dataset(self):
+        subjects = glob(SHHS_EDF_DIR+"**/**.edf", recursive=True)
+        train, test = train_test_split(subjects, test_size=0.4, shuffle=True, random_state=2019)
+        val, test = train_test_split(test, test_size=0.5, shuffle=True, random_state=2019)
+        if self.mode == "train":
+            self.subjects = train
+        elif self.mode == "validation":
+            self.subjects = val
+        elif self.mode == "test":
+            self.subjects = test
+        else:
+            raise Exception("unexpected mode")
+
+    def _load_subject_data(self, edf_path, channels=[]):
+        dt = {}
+        edf = Edfplus(edf_path)
+        # filter and resample signal into 200Hz
+        for channel in channels:
+            try:
+                dt[channel] = list(edf.signals[channel])
+            except IndexError:
+                if channel == "EEG(sec)":
+                    channel = "EEG(SEC)"
+                try:
+                    dt[channel] = list(edf.signals[channel])
+                except IndexError:
+                    channel = "EEG2"
+                    try:
+                        dt[channel] = list(edf.signals[channel])
+                    except IndexError:
+                        channel = "EEG 2"
+                        try:
+                            dt[channel] = list(edf.signals[channel])
+                        except IndexError:
+                            channel = "EEG sec"
+                            try:
+                                dt[channel] = list(edf.signals[channel])
+                            except IndexError:
+                                print("channel abnormal in {}".format(edf_path))
+        return dt
+
+    def _load_subject_label(self, edf_path):
+        edf_file = os.path.basename(edf_path)
+        label_file = edf_file[:-4] + "-nsrr.xml"
+        category = edf_file[:5]
+        label_path = os.path.join(SHHS_ANNO_DIR, category, label_file)
+        return load_labels_from_xml(label_path)
+
+    def load_subject(self, edf_path, channels):
+        data = self._load_subject_data(edf_path, channels)
+        labels = self._load_subject_label(edf_path)
+        return (data, labels)
+
+    def slice_in_secs(self, channel, name, start, end):
+        if "EOG" in name:
+            fs = 50
+        else:
+            fs = 125
+        start = start * fs
+        end = end * fs
+        return channel[start:end]
+
+    def slice_label(self, labels, start, end):
+        epochs = []
+        step = 30
+        for ind in range(start, end, step):
+            c = Counter(labels[ind:ind+step])
+            label = c.most_common(1)[0][0]
+            epochs.append(label)
+        return epochs
+
+    def __call__(self):
+        step = self.step
+        for subject in tqdm(self.subjects):
+            data, labels = self.load_subject(subject, self.channels)
+            num_samples = len(labels)
+            num_epochs = int(num_samples/30)
+            channel_names = data.keys()
+            for epoch_id in range(0, num_epochs-step, step):
+                step_data = {}
+                start = epoch_id * 30
+                end = (epoch_id + step) * 30
+                for name in channel_names:
+                    step_data[name] = self.slice_in_secs(data[name], name, start, end)
+                step_data["label"] = self.slice_label(labels, start, end)
+                yield step_data
+                
+# C4-A1  C3-A2
+# 'EEG', "EEG(sec)", "EOG(L)", "EOG(R)", "EMG": 125 125 50 50 125
+                
+if __name__ == '__main__':
+    xml_path = SHHS_ANNO_DIR + "shhs1/" + "shhs1-202327-nsrr.xml"
+    #print(xml_path)
+    #label = load_labels_from_xml(xml_path)
+    shhs = SHHS(mode="train", step=30, channels=['EEG', "EEG(sec)", "EOG(L)", "EOG(R)", "EMG"])
+    for example in shhs():
+        print(example.keys())
+        break
+
+
+
+        

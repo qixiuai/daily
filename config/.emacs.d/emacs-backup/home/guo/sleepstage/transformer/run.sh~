@@ -1,0 +1,22 @@
+#!/bin/bash
+
+PARAM_SET=tiny
+DATA_DIR=$HOME/data/learn/transformer
+MODEL_DIR=$HOME/data/learn/transformer/model_$PARAM_SET
+VOCAB_FILE=$DATA_DIR/vocab.ende.32768
+
+#python data_download.py --data_dir=$DATA_DIR
+
+# Train the model for 100000 steps and evaluate every 5000 steps on a single GPU.
+# Each train step, takes 4096 tokens as a batch budget with 64 as sequence
+# maximal length.
+python3 transformer_main.py --data_dir=$DATA_DIR --model_dir=$MODEL_DIR \
+    --vocab_file=$VOCAB_FILE --param_set=$PARAM_SET \
+    --train_steps=100000 --steps_between_evals=5000 \
+    --batch_size=4096 --max_length=64 \
+    --bleu_source=$DATA_DIR/newstest2014.en \
+    --bleu_ref=$DATA_DIR/newstest2014.de \
+    --num_gpus=1 \
+    --enable_time_history=true
+
+

@@ -1,0 +1,193 @@
+
+import os
+import numpy as np
+import random
+from scipy.io import loadmat
+from glob import glob
+
+from deepstage.data_generators import problem
+from deepstage.utils import registry
+from deepstage.data_generators import image_utils
+from deepstage.data_generators import generator_utils
+from deepstage.layers import modalities
+
+from tensor2tensor.utils import metrics
+from tensor2tensor.data_generators import text_encoder
+
+import tensorflow as tf
+import pdb
+
+_ISRUC_DIR = "/home/guo/data/sleepstage/database/ISRUC_Sleep/"
+_MAT_DIR = _ISRUC_DIR + "ExtractedChannels/subgroupI-Extractedchannels/"
+_TXT_DIR = _ISRUC_DIR + "subgroupI/"
+mat_files = glob(_MAT_DIR + "/*.mat")
+random.shuffle(mat_files)
+
+class StageProblem(problem.Problem):
+
+    @property
+    def class_labels(self):
+        return [i for i in range(self.num_stages)]
+    
+    def feature_encoders(self, data_dir):
+        del data_dir
+        return {
+            "inputs": text_encoder.RealEncoder(),
+            "targets": text_encoder.RealEncoder(),
+        }
+
+    @property
+    def dataset_splits(self):
+        return [{
+            "split": problem.DatasetSplit.TRAIN,
+            "shards": self.num_train_shards,
+        }, {
+            "split": problem.DatasetSplit.EVAL,
+            "shards": self.num_eval_shards,
+        }, {
+            "split": problem.DatasetSplit.TEST,
+            "shards": self.num_test_shards,
+        }]
+    
+    @property
+    def num_train_shards(self):
+        return 9
+
+    @property
+    def num_eval_shards(self):
+        return 1
+
+    @property
+    def num_test_shards(self):
+        return 1
+
+    @property
+    def num_series(self):
+        raise NotImplementedError()
+
+    @property
+    def num_stages(self):
+        return 5
+
+    @property
+    def width(self):
+        return 30*200
+    
+    @property
+    def num_input_timestamps(self):
+        raise NotImplementedError()
+
+    @property
+    def num_target_timestamps(self):
+        raise NotImplementedError()
+
+    def eval_metrics(self):
+        eval_metrics = [
+            metrics.Metrics.ACC, metrics.Metrics.ACC_TOP5,
+        ]
+        return eval_metrics
+
+    def preprocess_example(self, example, unused_mode, unused_hparams):
+        # resample signals
+        flat_inputs = example["inputs"]
+        width = self.width
+        num_series = self.num_series
+        example["inputs"] = tf.reshape(
+            flat_inputs, [width, num_series])
+        return example
+    
+    def generate_samples(self, data_dir, tmp_dir, dataset_split):
+        raise NotImplementedError()
+
+    def hparams(self, defaults, unused_model_hparams):
+        p = defaults
+        p.modality = {"inputs": modalities.IdentityModality,
+                      "targets": modalities.StageModality}
+        p.vocab_size = {"inputs": 50000, "targets": self.num_stages}
+        p.input_space_id = problem.SpaceID.REAL
+        p.target_space_id = problem.SpaceID.REAL
+        
+    def generate_data(self, data_dir, tmp_dir, task_id=-1):
+        filepath_fns = {
+            problem.DatasetSplit.TRAIN: self.training_filepaths,
+            problem.DatasetSplit.EVAL: self.dev_filepaths,
+            problem.DatasetSplit.TEST: self.test_filepaths,
+        }
+
+        split_paths = [(split["split"], filepath_fns[split["split"]](
+            data_dir, split["shards"], shuffled=False))
+                       for split in self.dataset_splits]
+        
+        all_paths = []
+        for _, paths in split_paths:
+            all_paths.extend(paths)
+
+        for split, paths in split_paths:
+            generator_utils.generate_files(
+                self.generate_samples(data_dir, tmp_dir, split), paths)
+
+        generator_utils.shuffle_dataset(all_paths)
+        
+    def example_reading_spec(self):
+        data_fields = {
+            "inputs": tf.FixedLenFeature((6000,self.num_series), tf.float32),
+            "targets": tf.FixedLenFeature((1,1,5), tf.int64),
+        }
+        data_items_to_decoders = None
+        return (data_fields, data_items_to_decoders)
+    
+
+@registry.register_problem
+class StageIsruc(StageProblem):
+
+    @property
+    def num_series(self):
+        return 2
+
+    def encode(self, lb):
+        one_hot = [0] * self.num_stages
+        idx = int(lb)
+        if idx == 5:
+            idx = 4
+        one_hot[idx] = 1
+        return one_hot
+    
+    def generate_samples(self, data_dir, tmp_dir, dataset_split):
+        train_files = mat_files[:4]
+        dev_files  = mat_files[54:55]
+        test_files = mat_files[99:]
+        if dataset_split == problem.DatasetSplit.TRAIN:
+            files = train_files
+        elif dataset_split == problem.DatasetSplit.EVAL:
+            files = dev_files
+        elif dataset_split == problem.DatasetSplit.TEST:
+            files = test_files
+        X = []
+        y = []
+        for file in files:
+            # X1 is chin EMG
+            #signal_names = [ "C4_A1", "C3_A2", "ROC_A1", "LOC_A2", "X1"]
+            signal_names = [ "C4_A1", "C3_A2"]
+            data = loadmat(file, variable_names=signal_names)
+            n_epochs = data[signal_names[0]].shape[0]
+            signals = [data[name] for name in signal_names]
+            X_batch = np.stack(signals, axis=2)
+            for i in range(n_epochs):
+                X.append(X_batch[i])
+            file = os.path.basename(file)
+            file_id = file[7:-4]
+            label_file = _TXT_DIR + file_id + "/" + file_id + "_1.txt"
+            labels = np.loadtxt(label_file)
+            y.extend(labels[:-30].tolist())
+
+        width, height = X[0].shape
+        for (epoch, label) in zip(X, y):
+            yield {
+                "inputs": epoch.flatten().tolist(),
+                "targets": self.encode(label),
+            }
+    
+    
+if __name__ == '__main__':
+    tmp_dir = "/home/guo/data/sleepstage/sleepbrain/tmp"
+    psg_isruc_generator(_ISRUC_DIR, tmp_dir)

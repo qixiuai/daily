@@ -1,0 +1,13 @@
+
+cc_binary(
+    name = "resample_test",
+    srcs = ["resample_test.cc"],
+    deps = [":resample"], 
+)
+
+cc_library(
+    name = "resample",
+    srcs = ["resample.cc", "upfirdn.h"],
+    hdrs = ["resample.h"],
+    deps = ["@boost"],
+)

@@ -1,0 +1,5 @@
+class MyClass {
+ public:
+  int pub_num;
+  int pubFunc();
+};

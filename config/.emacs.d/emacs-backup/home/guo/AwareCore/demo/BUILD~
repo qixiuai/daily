@@ -1,0 +1,17 @@
+cc_binary(
+    name = "demo.dll",
+    srcs = ["demo.c"],
+    features = ["windows_export_all_symbols"],
+    linkshared = 1,
+)
+
+cc_library(
+    name = "demo",
+    srcs = ["demo.c"],
+    hdrs = ["demo.h"]    
+)
+cc_binary(
+    name = "main",
+    srcs = ["main.c"],
+    deps = [":demo"],
+)

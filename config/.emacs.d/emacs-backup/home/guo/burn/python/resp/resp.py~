@@ -1,0 +1,22 @@
+
+import numpy as np
+from scipy.signal import detrend
+
+
+def detrend_resp(signal):
+    return detrend(signal)
+
+
+class RespDetector(object):
+
+    def __init__(self):
+        pass
+
+    def baseline(self, ind):
+        pass
+    
+    def detect(self):
+        pass
+    
+
+

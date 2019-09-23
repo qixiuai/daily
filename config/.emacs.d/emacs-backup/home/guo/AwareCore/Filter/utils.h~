@@ -1,0 +1,23 @@
+#ifndef _PHYSIO_UTILS_
+#define _PHYSIO_UTILS_
+
+#include <vector>
+#include <iostream>
+#include <string>
+
+#include <boost/circular_buffer.hpp>
+
+#include "dsa.h"
+
+namespace physio {
+  using std::string, std::vector;
+  using std::cout, std::endl;
+
+  using uint32 = unsigned int;
+  
+  template <class T>
+    using Buffer = boost::circular_buffer<T>;    
+  
+}; // end namespace physio
+
+#endif

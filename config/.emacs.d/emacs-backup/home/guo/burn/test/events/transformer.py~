@@ -1,0 +1,70 @@
+""" SHHS Dataset Interface """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import pdb
+import untangle
+import numpy as np
+
+from glob import glob
+from edfplus import Edfplus
+from absl import app
+
+SHHS_DIR = "/home/guo/physio/database/SHHSSleepData/shhs/polysomnography/"
+SHHS_EDF_DIR = SHHS_DIR + "edfs/"
+SHHS_ANNO_DIR = SHHS_DIR + "annotations-events-nsrr/"
+
+def load_labels_from_xml(xml_path, fs=125):
+    print(xml_path)
+    obj = untangle.parse(xml_path)
+    stages = []
+    for event in obj.PSGAnnotation.ScoredEvents.ScoredEvent:
+        print(event.EventType.cdata)
+        if "Respiratory|Respiratory" in event.EventType.cdata:
+            pdb.set_trace()
+        if "Stages" in event.EventType.cdata:
+            continue
+            dur = event.Duration
+            label = int(event.EventConcept.cdata.split('|')[1])
+            pdb.set_trace()
+            stages.extend([label]*dur*fs)
+    return stages
+
+def get_label_path(edf_path):
+    edf_file = os.path.basename(edf_path)
+    label_file = edf_file[:-4] + "-nsrr.xml"
+    category = edf_file[:5]
+    label_path = os.path.join(SHHS_ANNO_DIR, category, label_file)
+    return label_path
+
+def load_subject_data(edf_path, channels=[]):
+    edf = Edfplus(edf_path)
+    if not channels:
+        channels = list(edf.signal_names)
+        # filter and resample signal into 200Hz
+    return np.stack([list(edf.signals[c]) for c in channels], axis=2)
+
+def anno_to_csv():
+    pass
+
+def make_iphysio_edf(edf):
+    pass
+
+def main(unused_args):
+    category = "shhs1/"
+    subjects = glob(SHHS_EDF_DIR+category+"*.edf", recursive=True)
+    for id, subject in enumerate(subjects):
+        print(id, subject)
+        label_path = get_label_path(subject)
+        anno = load_labels_from_xml(label_path)
+        print(anno)
+        break
+
+if __name__ == '__main__':
+    app.run(main)
+
+
+

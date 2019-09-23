@@ -1,0 +1,23 @@
+#include <cstring>
+#include <iostream>
+
+template <typename U>
+void def (int a, int b) {
+  
+}
+
+namespace A {
+  #define U(x) L##x
+  //#define U(x) 2*x
+#undef U
+}
+
+
+
+//#include <boost/circular_buffer.hpp>
+
+int main() {
+  //  std::cout << U("ahege") << '\n';
+  std::cerr << "hello world\n";
+  return 0;
+}

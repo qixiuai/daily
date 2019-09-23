@@ -1,0 +1,3 @@
+function [pks, locs] = dewave(signal) %#codegen
+[pks, locs] = findpeaks(signal, "MinPeakProminence", 400, "MinPeakDistance", 90);
+end

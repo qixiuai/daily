@@ -1,0 +1,13 @@
+#include "header.h"
+
+class MyClass {
+ private:
+  int private_num;
+  int privateFunc();
+};
+int MyClass::pubFunc() {
+  return 1;
+}
+int MyClass::privateFunc() {
+  return 0;
+}

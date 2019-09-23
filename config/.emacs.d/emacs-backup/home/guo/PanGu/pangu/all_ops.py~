@@ -1,0 +1,74 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+
+class Operation(object):
+    """ Operation """
+
+    def __init__(self, name, input_names, output_names):
+        """ 
+        name: ops name
+        inputs: names of messages []
+        outputs: nameso of messages []
+        """
+        self._name = name
+        self._input_names  = input_names
+        self._output_names = output_names
+
+
+    def input_names(self):
+        return self._input_names
+
+
+    def output_names(self):
+        return self._output_names
+
+    
+    @property
+    def use_body_sharded(self):
+        return False
+
+
+    @property
+    def costs(self):
+        """ better given by actual computing time """
+        return 1
+
+    def body_sharded(self, inputs):
+        raise NotImplementedError()
+    
+    
+    def body(self, inputs):
+        raise NotImplementedError()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

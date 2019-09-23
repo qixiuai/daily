@@ -1,0 +1,49 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import random
+import numpy as np
+import pandas as pd
+
+import wfdb
+from scipy.io import loadmat
+
+from tensor2tensor.utils import registry
+from tensor2tensor.data_generators import problem
+from tensor2tensor.data_generators import generator_utils
+
+from stage.stage_utils import StageProblem
+
+import tensorflow as tf
+
+_DATA_DIR = "/home/guo/data/sleepstage/database/physiochallenge2018/training/"
+random.seed(2018)
+
+@registry.register_problem
+class SleepArousals(StageProblem):
+
+    @property
+    def num_signals(self):
+        return 3
+
+    @property
+    def class_labels(self):
+        return [str(i) for i in range(2)]
+    
+    def generate_samples(self, data_dir, tmp_dir, dataset_split):
+        files = os.listdir(_DATA_DIR)
+        record = wfdb.rdrecord(filepath, physical=False)
+        signals = record.d_signal[:, [2, 3, 6, 7]] # c3-m2, c4-m1, e1-m2, chin1-chin2
+        
+        
+        
+def main(unused_arg):
+    del unused_arg
+    
+        
+if __name__ == '__main__':
+    tf.app.run(main)
+    

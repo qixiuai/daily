@@ -1,0 +1,20 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "respiratoryrate_wrapper.h"
+
+int main() {
+  FILE* file = fopen("/home/guo/AwareCore/RespiriatoryRate/data/Wuqiliu.txt", "r");
+  char line[64];
+  RespiratoryDetector* resp = respiratorydetector_construct();
+  int rate = 0;
+  int value;
+  while (fgets(line, sizeof(line), file)) {
+    value = atoi(line);
+    rate = respiratorydetector_run(resp, value);
+    printf("%d\n", value);
+  }
+  fclose(file);
+  respiratorydetector_destruct(resp);
+  return 0;
+}

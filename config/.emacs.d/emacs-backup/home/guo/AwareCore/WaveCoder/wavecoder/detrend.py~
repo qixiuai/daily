@@ -1,0 +1,38 @@
+from utils import *
+
+
+class Detrender(object):
+    """
+    """
+    def __init__(self):
+        '''
+        n is number of points
+        '''
+        self.n    = 0;
+        self.mean = 0;
+
+    def detrend(self, signal):
+        y = np.empty_like(signal);
+        for ind, val in enumerate(signal):
+            y[ind] = self.detrend_realtime(val);
+        return y;
+
+    def detrend_realtime(self, value):
+        n = self.n + 1;
+        mean  = (self.mean * self.n + value) / n;
+        value = value - mean;
+        self.n    = n;
+        self.mean = mean;
+        return value;
+
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    data = np.random.rand(200);
+    detrender = Detrender();
+    detrend_data = detrender.detrend(data);
+    plt.subplot(211);
+    plt.plot(data);
+    plt.subplot(212);
+    plt.plot(detrend_data);
+    plt.show();

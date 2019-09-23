@@ -1,0 +1,40 @@
+
+#ifndef BURN_COMMON_TYPE_H_
+#define BURN_COMMON_TYPE_H_
+
+#include <string>
+#include <vector>
+
+namespace burn {
+  
+  struct Event {
+    int start;
+    int end;
+    Event(int st, int ed) {
+      start = st;
+      end = ed;
+    }
+    std::string to_string() {
+      return std::to_string(start) + '_' + std::to_string(end);
+    }
+  };
+  
+  std::string EventsToString(std::vector<Event>& events,
+			     std::string tag) {
+    std::string ret = tag;
+    for (auto event : events) {
+      ret.append(event.to_string()+',');
+    }
+    ret[ret.size()-1] = '\n';
+    return ret;
+  }
+  
+  int IndexToEpochID(int index, int fs=100);
+
+  float MaxEventDurationInSec(std::vector<Event>& events, int fs=100);
+
+  float MeanEventDurationInSec(std::vector<Event>& events, int fs=100);
+  
+}
+
+#endif

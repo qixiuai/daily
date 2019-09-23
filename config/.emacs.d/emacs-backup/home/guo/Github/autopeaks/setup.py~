@@ -1,0 +1,22 @@
+
+import os
+from setuptools import setup
+
+
+def read(fname):
+    return open(os.path.join(
+        os.path.dirname(__file__), fname)).read()
+
+
+setup(
+    name = "AutoPeaks",
+    version = "0.0.1",
+    author = "Qixiu",
+    author_email = "qixiuai@163.com",
+    description = ("automatic find peaks in a signal"),
+    packages = ["findpeaks"],
+    long_description = read('README.md'),
+)
+
+
+

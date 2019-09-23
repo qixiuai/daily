@@ -1,0 +1,14 @@
+cc_binary(
+    name = "bcgc.dll",
+    srcs = ["BCGWrapper.cc"],
+    deps = [":bcg"],
+    features = ["windows_export_all_symbols"],
+    linkshared = 1,    
+)
+
+cc_library(
+    name = "bcg",
+    srcs = ["BCG.cc"],
+    hdrs = ["BCG.h"],
+    features = ["windows_export_all_symbols"],
+)

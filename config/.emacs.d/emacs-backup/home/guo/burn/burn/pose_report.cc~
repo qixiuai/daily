@@ -1,0 +1,168 @@
+
+#include "burn/pose_report.h"
+
+#include <algorithm>
+
+namespace burn {
+  
+  float DurationWithPoseStateInMiniutes(const std::vector<float>& pose,
+					float state,
+					int fs=1) {
+    int sum = 0;
+    int num_samples = pose.size();
+    for (int i = 0; i < num_samples; i++) {
+      float sample = pose[i];
+      if (sample == state)
+	sum += 1;
+    }
+    return sum / 60;
+  }
+  
+  float NumEventsWithPose(const std::vector<float>& pose,
+			  const std::vector<Event>& events,
+			  float state,
+			  int fs = 100) {
+    int sum = 0;
+    int num_events = events.size();
+    for (int event_id = 0; event_id < num_events; event_id++) {
+      auto event = events[event_id];
+      int st = event.start / fs;
+      int ed = event.end /  fs;
+      for (int i = st; i < ed; i++) {
+	if (pose[i] == state) {
+	  sum += 1;
+	  break;
+	}
+      }
+    }
+    return sum;
+  }
+
+  void GetPoseEpochs(std::vector<int>& pose_epochs,
+		     const std::vector<float>& pose) {
+    std::vector<int> counter = {0, 0, 0, 0, 0, 0}; // 0~5
+    auto st = pose.begin();
+    for (auto it = st; it < pose.end(); it += 30) {
+      counter = {0, 0, 0, 0, 0, 0};
+      int  dist_to_end = std::distance(it, pose.end());
+      int num_samples_per_epoch = dist_to_end > 30 ? 30 : dist_to_end;
+      for (int i = 0; i < num_samples_per_epoch; i++) {
+	auto sample = *(it + i);
+	counter[sample] += 1;
+      }
+      auto m_iter = std::max_element(counter.begin(), counter.end());
+      int state = std::distance(counter.begin(), m_iter);
+      pose_epochs.push_back(state);
+    }
+  }
+  
+  void PoseReport::Run() {
+    auto& table = rets_->table;
+    auto pose = args_->pose;
+    auto cas = args_->cas;
+    auto mas = args_->mas;
+    auto oas = args_->oas;
+    auto hyps = args_->hyps;
+    auto desats = args_->desats;
+    auto reras = args_->reras;
+    
+    table["S_Duration"] = DurationWithPoseStateInMiniutes(pose, 1);
+    table["L_Duration"] = DurationWithPoseStateInMiniutes(pose, 2);
+    table["R_Duration"] = DurationWithPoseStateInMiniutes(pose, 3);
+    table["P_Duration"] = DurationWithPoseStateInMiniutes(pose, 4);
+    table["U_Duration"] = DurationWithPoseStateInMiniutes(pose, 5);
+            
+    table["S_OA"] = NumEventsWithPose(pose, oas, 1);
+    table["L_OA"] = NumEventsWithPose(pose, oas, 2);
+    table["R_OA"] = NumEventsWithPose(pose, oas, 3);
+    table["P_OA"] = NumEventsWithPose(pose, oas, 4);
+    table["U_OA"] = NumEventsWithPose(pose, oas, 5);
+	  
+    table["S_CA"] = NumEventsWithPose(pose, cas, 1);
+    table["L_CA"] = NumEventsWithPose(pose, cas, 2);
+    table["R_CA"] = NumEventsWithPose(pose, cas, 3);
+    table["P_CA"] = NumEventsWithPose(pose, cas, 4);
+    table["U_CA"] = NumEventsWithPose(pose, cas, 5);
+
+    table["S_MA"] = NumEventsWithPose(pose, mas, 1);
+    table["L_MA"] = NumEventsWithPose(pose, mas, 2);
+    table["R_MA"] = NumEventsWithPose(pose, mas, 3);
+    table["P_MA"] = NumEventsWithPose(pose, mas, 4);
+    table["U_MA"] = NumEventsWithPose(pose, mas, 5);
+
+    table["S_HYP"] = NumEventsWithPose(pose, hyps, 1);
+    table["L_HYP"] = NumEventsWithPose(pose, hyps, 2);
+    table["R_HYP"] = NumEventsWithPose(pose, hyps, 3);
+    table["P_HYP"] = NumEventsWithPose(pose, hyps, 4);
+    table["U_HYP"] = NumEventsWithPose(pose, hyps, 5);
+
+    table["S_RERA"] = NumEventsWithPose(pose, reras, 1, 500);
+    table["L_RERA"] = NumEventsWithPose(pose, reras, 2, 500);
+    table["R_RERA"] = NumEventsWithPose(pose, reras, 3, 500);
+    table["P_RERA"] = NumEventsWithPose(pose, reras, 4, 500);
+    table["U_RERA"] = NumEventsWithPose(pose, reras, 5, 500);
+
+    table["S_Desat"] = NumEventsWithPose(pose, desats, 1, 1);
+    table["L_Desat"] = NumEventsWithPose(pose, desats, 2, 1);
+    table["R_Desat"] = NumEventsWithPose(pose, desats, 3, 1);
+    table["P_Desat"] = NumEventsWithPose(pose, desats, 4, 1);
+    table["U_Desat"] = NumEventsWithPose(pose, desats, 5, 1);
+
+    if (table["S_Duration"] != 0) {
+      table["S_AHI"] = (table["S_OA"] + table["S_CA"] + table["S_MA"] + \
+			table["S_HYP"]) / table["S_Duration"] / 60;
+      table["S_RDI"] = table["S_AHI"] + table["S_Desat"] / table["S_Duration"] / 60;
+    }
+    else {
+      table["S_AHI"] = 0;
+      table["S_RDI"] = 0;
+    }
+    
+    if (table["L_Duration"] != 0) {
+      table["L_AHI"] = (table["L_OA"] + table["L_CA"] + table["L_MA"] + \
+			table["L_HYP"]) / table["L_Duration"] / 60;
+      table["L_RDI"] = table["L_AHI"] + table["L_Desat"] / table["L_Duration"] / 60;  
+    } else {
+      table["L_AHI"] = 0;
+      table["L_RDI"] = 0;
+    }
+
+    if (table["R_Duration"] != 0) {
+      table["R_AHI"] = (table["R_OA"] + table["R_CA"] + table["R_MA"] + \
+			table["R_HYP"]) / table["R_Duration"] / 60;
+      table["R_RDI"] = table["R_AHI"] + table["R_Desat"] / table["R_Duration"] / 60;
+    } else {
+      table["R_AHI"] = 0;
+      table["R_RDI"] = 0;  
+    }
+
+    if (table["P_Duration"] != 0) {
+      table["P_AHI"] = (table["P_OA"] + table["P_CA"] + table["P_MA"] + \
+			table["P_HYP"]) / table["P_Duration"] / 60;
+      table["P_RDI"] = table["P_AHI"] + table["P_Desat"] / table["P_Duration"] / 60;
+    } else {
+      table["P_AHI"] = 0;
+      table["P_RDI"] = 0;
+    }
+    
+    if (table["U_Duration"] != 0) {
+      table["U_AHI"] = (table["U_OA"] + table["U_CA"] + table["U_MA"] + \
+			table["U_HYP"]) / table["U_Duration"] / 60;
+      table["U_RDI"] = table["U_AHI"] + table["U_Desat"] / table["U_Duration"] / 60;
+    } else {
+      table["U_AHI"] = 0;
+      table["U_RDI"] = 0;
+    }
+            
+    // chart
+    std::vector<float> pose_epochs;
+    GetPoseEpochs(pose_epochs, pose);
+    auto& chart_pose = rets_->chart_pose;
+    chart_pose = "Pose,";
+    for (auto pose : pose_epochs) {
+      chart_pose.append(std::to_string(pose) + ',');
+    }
+    chart_pose[chart_pose.size()-1] = '\n';
+  }
+  
+}

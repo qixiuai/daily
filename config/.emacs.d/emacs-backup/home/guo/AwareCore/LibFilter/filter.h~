@@ -1,0 +1,19 @@
+//#include <windows.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+__declspec(dllexport) void fir_lowpass_500(double* y, double *x, int len);
+
+__declspec(dllexport) void fir_lowpass_online_500(double* y, double *x, int n);
+
+// highpass: Fstop:0.1Hz, Fpass: 0.2Hz Least-Square, order=30
+// realtime len=31
+__declspec(dllexport) void fir_highpass_500(double* y, double *x, int len);
+
+__declspec(dllexport) void fir_highpass_online_500(double* y, double *x, int n);
+
+#ifdef __cplusplus
+}
+#endif

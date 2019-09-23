@@ -1,0 +1,31 @@
+
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import numpy as np
+from ops.adappeaks import AdapPeaks
+from ops import ops
+
+
+def period2rate(period):
+    return 60 / period / 500
+
+class HeartRate(ops.Operation):
+
+    def inputs(self):
+        pass
+
+    def outputs(self):
+        pass
+
+    def body(self, inputs):
+        ecg = inputs["ecg"]
+        adappeaks = AdapPeaks(init_thres=0.7, cycle_min=200, cycle_max=750)
+        peaks = adappeaks.find(ecg)
+        periods = np.diff(peaks)
+        return periods
+        
+
+

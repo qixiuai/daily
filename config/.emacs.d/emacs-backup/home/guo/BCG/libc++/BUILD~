@@ -1,0 +1,6 @@
+cc_import(
+    name = "libc++",
+    hdrs = glob(["include/*"]),
+    shared_library = "libc++.so",
+    visibility = "//visibility:public",
+)

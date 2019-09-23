@@ -1,0 +1,6 @@
+cc_binary(
+    name = 'findpeaks',
+    srcs = ['findpeaks.cc'],
+    hdrs = ['findpeaks.h'],
+    visibility = ['//finpeaks:__pkg__'],
+)

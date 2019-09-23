@@ -1,0 +1,42 @@
+
+#ifndef _PHYSIO_HEART_
+#define _PHYSIO_HEART_
+
+#include "filter/detrend.h"
+#include "utils/utils.h"
+
+#include "pqrst.h"
+
+namespace physio {
+  class HeartJudge {
+  public:
+    HeartJudge() = default;
+    HeartJudge(EventQueues* event_queues) {
+      this->event_queues = event_queues;
+      this->detrender = Detrender<int>(700);
+      int Fz = 500;
+      int buffer_size = Fz * 11;
+      this->pqrst_detector = PQRSTDetector(Fz, buffer_size);
+    }
+    int run(int ecg_la_ra) {
+      int det_val = detrender.detrend(ecg_la_ra);
+      if (det_val != 0) {
+	pqrst_detector.run(det_val);
+      }
+      return 0;
+    }
+    int add_summary() {
+      return 0;
+    }
+  private:
+    EventQueues*    event_queues;
+    
+    PQRSTDetector    pqrst_detector;
+    Detrender<int>  detrender;
+
+    void __judges();
+  };
+
+}; //end namespace physio
+
+#endif

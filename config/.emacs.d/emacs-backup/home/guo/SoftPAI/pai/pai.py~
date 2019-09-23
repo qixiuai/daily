@@ -1,0 +1,20 @@
+
+import tensorflow as tf
+
+from pai.misc import misc
+
+from absl import app
+from absl import flags
+from absl import logging
+
+
+
+
+def main(_):
+    pass
+
+
+if __name__ == "__main__":
+    logging.set_verbosity(logging.DEBUG)
+    msic.define_pai_flags()
+    app.run(main)

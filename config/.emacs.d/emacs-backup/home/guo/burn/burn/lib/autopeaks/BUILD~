@@ -1,0 +1,22 @@
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+cc_library(
+    name  = "autopeaks",
+    srcs  = ["autopeaks.cc"],
+    hdrs  = ["autopeaks.h"],
+    copts = ["-std=c++17"],
+    deps = [":findpeaks_offline"],
+)
+
+cc_library(
+    name  = "findpeaks_offline",
+    srcs  = ["burn/lib/autopeaks/findpeaks.cc"],
+    hdrs  = ["burn/lib/autopeaks/findpeaks.h"],
+    copts = ["-std=c++17"],
+    deps = ["//third_party/boost:boost"],
+)

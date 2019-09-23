@@ -1,0 +1,10 @@
+
+FLAGS=-std=c++17
+
+learn: learn.cpp
+	clang++ learn.cpp $(FLAGS) -lDisMax -o $@ -I. -L.
+	./$@
+
+libDisMax.so : DisMax.cpp
+	clang++ DisMax.cpp  $(FLAGS) -fPIC -shared -o $@
+

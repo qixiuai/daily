@@ -1,0 +1,22 @@
+
+#include "burn/autostage.h"
+
+#include "burn/lib/resample/resample.h"
+
+
+namespace burn {
+
+  AutoStage(Rets* rets, const Args* args) {
+    args_ = args;
+    rets_ = rets;
+    model_ = StageModel();
+  }
+  
+  void AutoStage::Run() {
+    
+    
+    
+  }
+  
+  
+}

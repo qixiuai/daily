@@ -1,0 +1,47 @@
+
+
+cc_proto_library(
+    name = "event_cc_proto",
+    deps = [":event_proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "event_proto",
+    srcs = ["event.proto"],
+    deps = [":summary_proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "summary_proto",
+    srcs = ["summary.proto"],
+    deps = [":tensor_proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "tensor_proto",
+    srcs = ["tensor.proto"],
+    deps = [
+        ":resource_handle_proto",
+        ":tensor_shape_proto",
+        ":types_proto",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "types_proto",
+    srcs = ["types.proto"],
+)
+
+proto_library(
+    name = "tensor_shape_proto",
+    srcs = ["tensor_shape.proto"],
+)
+
+proto_library(
+    name = "resource_handle_proto",
+    srcs = ["resource_handle.proto"],
+)

@@ -1,0 +1,27 @@
+#include <iostream>
+#include <cstdint>
+
+
+
+int16_t parse_sample(unsigned char byte1, unsigned char byte2) {
+  int16_t sample = byte1 | byte2 << 8;
+  return int16_t(sample);
+}
+
+int16_t parse_sample_char(char byte1, char byte2) {
+  int16_t sample = byte1 | byte2 << 8;
+  return int16_t(sample);
+}
+
+
+int main() {
+  char b1 = -107;
+  char b2 = -75;
+  
+  int i = parse_sample_char(b1, b2);
+  
+  std::cout << i << '\n';
+  
+  
+  return 0;
+}

@@ -1,0 +1,89 @@
+
+#include "edfplus.h"
+
+#include <iostream>
+#include <fstream>
+#include <string>
+
+
+void parse_data() {
+  // get raw
+  // raw --> signal_raw --> signals
+}
+
+
+Edfplus::Edfplus(const std::string filepath) {
+  std::ifstream ifs(filepath, std::ios::binary);
+  ifs.seekg(0, std::ios::end);
+  auto file_size = ifs.tellg();
+  ifs.seekg(0, std::ios::beg);
+
+  raw_ = new char[file_size];
+  ifs.read(raw_, file_size);
+  
+  _parse_header();
+  _parse_signals();
+}
+
+
+void Edfplus::_parse_header() {
+  // get num_signals
+  std::string num_signals_str(raw_+252, 4);
+  num_signals = std::stoi(num_signals_str);
+
+  // parse signal names
+  int cur_name_start = 256;
+  for (int signal_index = 0; signal_index < num_signals; signal_index++) {
+    std::string name;
+    for (int offset = 0; offset < 16; offset++) {
+      char c = *(raw_ + cur_name_start + offset);
+      if (c == ' ' || c == 0)
+	break;
+      name += c;
+    }
+    signal_names.push_back(name);
+    name = "";
+    cur_name_start += 16;
+  }
+
+  // parse signal freqs
+  int freq_start = 256 + num_signals * 216;
+  for (int signal_index = 0; signal_index < num_signals; signal_index++) {
+    std::string signal_name = signal_names[signal_index];
+    std::string freq_str(raw_+freq_start+signal_index*8, 8);
+    signal_freqs[signal_name] = std::stoi(freq_str);
+  }
+}
+
+void Edfplus::_parse_signals() {
+  
+}
+
+Edfplus::~Edfplus() {
+  delete[] raw_;
+}
+
+
+/*
+
+int main() {
+  int* p =  new int(65);
+  char* ch = reinterpret_cast<char*>(p);
+  std::cerr << *p << '\n';
+  std::cerr << *ch << '\n';
+  std::cerr << p << '\n';
+  //std::cerr << static_cast<int>(ch) << "\n";
+  
+  char* bytes = new char[4];
+  bytes[0] = 'A';
+  bytes[1] = 0;
+  bytes[2] = 'B';
+  bytes[3] = 0;
+  
+  auto digit = reinterpret_cast<int16_t*>(bytes);
+  
+  delete[] bytes;
+  return 0;
+}
+
+*/

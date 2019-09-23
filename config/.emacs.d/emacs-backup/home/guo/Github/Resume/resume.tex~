@@ -1,0 +1,71 @@
+% !TEX program = xelatex
+
+\documentclass{resume}
+%\usepackage{zh_CN-Adobefonts_external} % Simplified Chinese Support using external fonts (./fonts/zh_CN-Adobe/)
+\usepackage{zh_CN-Adobefonts_internal} % Simplified Chinese Support using system fonts
+\usepackage{graphicx}
+
+
+\begin{document}
+\pagenumbering{gobble} % suppress displaying page number
+
+\begin{figure}%[ht!]
+\includegraphics[width=36mm]{zhmz90.jpg}
+\end{figure}
+
+\name{郭兰停}
+
+\basicInfo{
+  \email{zhmz90@gmail.com} \textperiodcentered
+  \phone{170-5136-3256} \textperiodcentered}
+
+\section{\faGraduationCap\ 教育}
+\datedsubsection{\textbf{中南财经政法大学 武汉}}{2009.9 -- 2013.6} \textit{本科} 信息管理与信息系统
+
+\section{\faCogs\ 技能}
+\begin{itemize}[parsep=0.5ex]
+  \item 开发环境: Ubuntu, Git, Emacs, Docker, Spark(HPC)
+  \item 典型库: Pandas, Numpy, Matplotlib, Sklearn, XGBoost, Pytorch, Tensorflow  
+  \item 编程语言: Julia, Python, C++, C, R, CUDA, SQL, Matlib, Java, html5, CSS3, \LaTeX\
+\end{itemize}
+
+\section{\faUsers\ 工作经验}
+\datedsubsection{\textbf{深圳海普洛斯生物科技有限责任公司}}{2014.9 -- 2016.9} \role{机器学习工程师}{主要负责科研项目中的机器学习部分和DNA二代测序数据分析流程的搭建与开发}
+\datedsubsection{\textbf{浙江核新同花顺网络信息股份有限公司}}{2014.5 -- 2014.8} \role{数据录入}{负责A股和新三板资产交易数据的录入与使用SQL语句进行数据校验}
+
+\section{\faUsers\ 项目经验}
+\datedsubsection{\textbf{CVPR 无人驾驶图片中的对象分类}}{2018.4 -- 至今}
+\role{Python, Pytorch, CNN}{CVPR2018无人驾驶方向的竞赛}
+2018 CVPR 无人驾驶图片中的对象分类竞赛。数据集是由百度提供的图片。目标是使模型能够识别出图像中的汽车，行人等十个类别。 目前使用Fully Convolutional Neural Network 做的基础模型。项目还在继续进行中。
+
+\datedsubsection{\textbf{常见癌症的分类}}{2015.11 -- 2016.3}
+\role{numpy, pandas, sklearn, xgboost}{深圳市海普洛斯生物科技有限公司}
+利用COSMIC癌症数据库中癌症的数据，去除个样本数太少的癌种，将剩余的样本进行癌症分类。项目的目标是如何使用最少的基因达到满意的分类效果。
+项目中数据的预处理用的是Julia。机器学习部分用的是Python，sklearn，xgboost，tensorflow等。
+
+\datedsubsection{\textbf{大小细胞肺癌的分类}}{2014.12 -- 2015.1}
+\role{numpy, pandas, sklearn, xgboost}{深圳市海普洛斯生物科技有限公司}
+利用COSMIC癌症数据库中的大小细胞肺癌的数据，进行癌症分类。项目的目标是如何使用最少的基因达到满意的分类效果。
+机器学习部分用的是Python，sklearn，xgboost等。
+
+\datedsubsection{\textbf{DNA测序数据分析流程的搭建与完善}}{2014.9 -- 2016.9}
+\role{numpy, pandas, sklearn, xgboost}{深圳市海普洛斯生物科技有限公司}
+血液或者细胞里面的DNA经过生物部门的处理，进入公司内部的测序仪。信息部对测序仪产生的TB级数据进行分析。整个流程主要包括数据的预处理，比对，癌症突变判定，突变对癌症的影响及是否有对应的靶向药。项目中使用了C，C++，Java，Python，R，CUDA C。
+
+\datedsubsection{\textbf{开源编程语言Julia及Julia生态系统}}{2015.2 -- 2016.9}
+\role{numpy, pandas, sklearn, xgboost}{深圳市海普洛斯生物科技有限公司}
+2012年诞生于MIT的新型编程语言Julia，融合了C++的速度和Python的编程效率，目前流行于科学计算，生物信息等学术领域，并开始向商业公司渗透。
+Julia的BUG提交，修改，文档的修改，共计12个commit.
+
+\section{\faHeartO\ 荣誉}
+\datedline{\textit{海普洛斯希望之星} }{2015.1}
+
+\section{\faInfo\ 其他}
+\begin{itemize}[parsep=0.5ex]
+  \item GitHub: https://github.com/zhmz90
+  \item Kaggle: https://www.kaggle.com/lantingguo
+  \item 英语: CET-6, 能够流畅阅读生物信息和计算机领域内的论文
+  \item 证券从业资格证
+\end{itemize}
+
+\end{document}

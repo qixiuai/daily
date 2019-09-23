@@ -1,0 +1,103 @@
+
+#include "burn/resp_report.h"
+
+#include "burn/common_type.h"
+
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+
+std::vector<int> load_stages() {
+  std::string label_path = \
+    "/home/guo/data/sleepstage/database/ISRUC_Sleep/subgroupI/1/1_1.txt";
+  std::ifstream in(label_path);
+  std::vector<int> stages;
+  std::string line;
+  int counter = 0;
+  while (in >> line) {
+    int label = std::stoi(line);
+    if (label == 5)
+      label = 4;
+    stages.push_back(label);
+    counter += 1;
+    // load 740 epochs
+    if (counter >= 740)
+      break;
+  }
+  return stages;
+}
+
+std::vector<burn::Event>
+load_plms(std::string path="/home/guo/burn/data/plms.txt",
+	  int event_length=2000) {
+  std::ifstream in(path);
+  std::vector<burn::Event> plms;
+  std::string line;
+  while (in >> line) {
+    int start = std::stoi(line);
+    plms.push_back(burn::Event(start, start+2000));
+  }
+  return plms;
+}
+
+std::vector<burn::Event> load_oas() {
+  std::string path = "/home/guo/burn/data/oas.txt";
+  return load_plms(path, 1000);
+}
+
+std::vector<burn::Event> load_cas() {
+  std::string path = "/home/guo/burn/data/cas.txt";
+  return load_plms(path, 1000);
+}
+
+std::vector<burn::Event> load_mas() {
+  std::string path = "/home/guo/burn/data/mas.txt";
+  return load_plms(path, 1000);
+}
+
+std::vector<burn::Event> load_hyps() {
+  std::string path = "/home/guo/burn/data/hyps.txt";
+  return load_plms(path, 1000);
+}
+
+std::vector<burn::Event> load_reras() {
+  std::string path = "/home/guo/burn/data/reras.txt";
+  return load_plms(path, 1000);
+}
+
+
+int main() {
+  auto stages = load_stages();
+  int sleep_onset_epoch_id = 11;
+  auto oas = load_oas();
+  auto cas = load_cas();
+  auto mas = load_mas();
+  auto hyps = load_hyps();
+  auto reras = load_reras();
+  
+  burn::RespReport::Args args(stages, sleep_onset_epoch_id,
+			      oas, cas, mas, hyps, reras);
+  burn::RespReport::Rets rets;
+  burn::RespReport resp_report(&rets, &args);
+  resp_report.Run();
+
+  /*
+) p rets
+$1 = {table = std::map with 31 elements = {["AHI"] = 666.666687, ["AI"] = 500, ["Apnea_Longest"] = 20, ["Apnea_Mean"] = 20, 
+    ["Apnea_TimesHappenedNREM"] = 2360, ["Apnea_TimesHappenedREM"] = 340, ["Apnea_TimesHappenedTotal"] = 3000, 
+    ["CA_Longest"] = 20, ["CA_Mean"] = 20, ["CA_TimesHappenedNREM"] = 782, ["CA_TimesHappenedREM"] = 116, 
+    ["CA_TimesHappenedTotal"] = 1000, ["HpyI"] = 166.666672, ["Hyp_Longest"] = 20, ["Hyp_Mean"] = 20, 
+    ["Hyp_TimesHappenedNREM"] = 776, ["Hyp_TimesHappenedREM"] = 100, ["Hyp_TimesHappenedTotal"] = 1000, 
+    ["LongestApnea"] = 20, ["MA_Longest"] = 20, ["MA_Mean"] = 20, ["MA_TimesHappenedNREM"] = 775, 
+    ["MA_TimesHappenedREM"] = 112, ["MA_TimesHappenedTotal"] = 1000, ["OA_Longest"] = 20, ["OA_Mean"] = 20, 
+    ["OA_TimesHappenedNREM"] = 803, ["OA_TimesHappenedREM"] = 112, ["OA_TimesHappenedTotal"] = 1000, ["RDI"] = 833.333374, 
+    ["RERAI"] = 166.666672}, resp_epochs = {oas = std::vector of length 740, capacity 740 = {0, 120, 240, 360, 480, 480, 
+      600, 480, 120, 0, 240, 240, 120, 360, 240, 120, 360, 360, 360, 360, 720, 360, 120, 240, 240, 120, 360, 960, 480, 120, 
+      120, 240, 240, 240, 240, 360, 120, 0, 360, 480, 240, 240, 480, 240, 120, 360, 360, 120, 360, 0, 120, 360, 600, 480, 
+      360, 480, 360, 240, 360, 480, 480, 360, 240, 360, 120, 120, 360, 240, 360, 120, 120   
+
+   */
+  return 0;
+}
+

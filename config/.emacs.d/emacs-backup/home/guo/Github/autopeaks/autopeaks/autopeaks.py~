@@ -1,0 +1,106 @@
+""" find peaks in a periodic signal such as ECG
+    Assume:
+      1. cycle is stable and have one strong period signal
+      2. target peaks have enough features
+    Proprosal:
+      1. peak value features
+      2. cycle priors
+      3. cycle transition priors
+      4. autodetect to detech peaks or valleys
+    Implemention:
+      1. merge findpeaks results
+      2. analysis peak results
+      3. adjust findpeaks function parameters
+"""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import numpy as np
+from collections import deque
+import peakutils
+
+from absl import app
+
+import pdb
+
+def find_peak_indexes(signal):
+    thres = 0.5
+    min_dist = 200
+    indexes = peakutils.indexes(signal, thres=thres, min_dist=min_dist)
+    return indexes
+
+
+class AutoPeaks(object):
+    """ online findpeaks for periodic signals """
+    def __init__(self, findpeak_func=find_peak_indexes,
+                 buf_size=2000):
+        """
+        Args:
+          cycle porior: TODO
+        """
+        self._findpeak_func = findpeak_func
+        self._signal_buffer = deque(maxlen=buf_size)
+        self._peak_value_buffer = deque()
+        self._peak_index_buffer = deque()
+        # private members
+        self._signal_index = -1 # starts from 0
+        self._update_counter = 0
+
+    @property
+    def value_of_peaks(self):
+        """ get the peak values """
+        while self._peak_value_buffer:
+            value = self._peak_value_buffer.popleft()
+            yield value
+
+    @property
+    def index_of_peaks(self):
+        """ get the peak indexes """
+        while self._peak_index_buffer:
+            index = self._peak_index_buffer.popleft()
+            yield index
+
+    def findpeak_func(self, func):
+        """ set find peaks function from a signal fragment """
+        self._findpeak_func = func
+
+    def clear(self):
+        """ clear signal buffer and reset signal index"""
+        self._signal_buffer.clear()
+        self._signal_index = -1
+
+    def findpeaks(self, value):
+        """ find peaks in signal buffer,
+            add peak indexes and peak values to buffer
+        """
+        self._signal_index   += 1
+        self._update_counter += 1
+        signal = self._signal_buffer
+        signal.append(value)
+        if len(signal) != signal.maxlen:
+            return
+        update_thres = 1000
+        if self._update_counter < update_thres:
+            return
+        self._update_counter = 0
+
+        ipks = self._findpeak_func(np.asarray(signal))
+#        pdb.set_trace()
+        ipk_offset = self._signal_index - signal.maxlen + 1
+        chosen_ipks_start = int( signal.maxlen / 4 )
+        chosen_ipks_end = signal.maxlen - int( signal.maxlen / 4 )
+        for ipk in ipks:
+            if ipk < chosen_ipks_start or ipk >= chosen_ipks_end:
+                continue
+            self._peak_index_buffer.append(ipk + ipk_offset)
+            self._peak_value_buffer.append(signal[ipk])
+            
+        
+def main(argv):
+    del argv
+    
+
+if __name__ == "__main__":
+    app.run(main)

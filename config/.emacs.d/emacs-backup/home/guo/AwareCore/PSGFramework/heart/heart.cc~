@@ -1,0 +1,23 @@
+
+#include "heart.h"
+
+namespace physio {
+  
+  void HeartJudge::__judges() {
+    /*
+    __judge_sinus_tachycardia();
+    __judge_bradycardia();
+    __judge_cardiac_arrest();
+    __judge_wide_qrs_complex_tachycardia();
+    __judge_narrow_qrs_complex_tachycardia();
+    __judge_atrial_fibrillation();
+    */
+  }
+
+};
+int main() {
+  using namespace physio;
+
+
+  return 0;
+}

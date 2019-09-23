@@ -1,0 +1,85 @@
+
+import os
+import numpy as np
+import random
+from scipy.io import loadmat
+from glob import glob
+
+from deepstage.data_generators import problem
+from deepstage.utils import registry
+from deepstage.data_generators import image_utils
+from deepstage.data_generators import generator_utils
+import tensorflow as tf
+import pdb
+
+_ISRUC_DIR = "/home/guo/data/sleepstage/database/ISRUC_Sleep/"
+_MAT_DIR = _ISRUC_DIR + "ExtractedChannels/subgroupI-Extractedchannels/"
+_TXT_DIR = _ISRUC_DIR + "subgroupI/"
+mat_files = glob(_MAT_DIR + "/*.mat")
+random.shuffle(mat_files)
+
+def _psg_isruc_generator(data_dir, tmp_dir, is_training):
+    tf.logging.debug("_psg_isruc_generator: " + str(is_training))
+    train_files = mat_files[:21]
+    dev_files = mat_files[94:]
+    files = train_files if is_training else dev_files
+    X = []
+    y = []
+    for file in files:
+        # X1 is chin EMG
+        #signal_names = [ "C4_A1", "C3_A2", "ROC_A1", "LOC_A2", "X1"]
+        signal_names = [ "C4_A1", "C3_A2", "ROC_A1", "LOC_A2"]
+        data = loadmat(file, variable_names=signal_names)
+        n_epochs = data[signal_names[0]].shape[0]
+        signals = [data[name] for name in signal_names]
+        X_batch = np.stack(signals, axis=2)
+        X_batch = np.expand_dims(X_batch, axis=3)
+        for i in range(n_epochs):
+            X.append(X_batch[i])
+        file = os.path.basename(file)
+        file_id = file[7:-4]
+        label_file = _TXT_DIR + file_id + "/" + file_id + "_1.txt"
+        labels = np.loadtxt(label_file)
+        y.extend(labels[:-30].tolist())
+
+    return image_utils.image_generator(X, y)
+            
+@registry.register_problem
+class psg_isruc(image_utils.Image2ClassProblem):
+
+    @property
+    def num_channels(self):
+        return 1
+
+    @property
+    def is_small(self):
+        return False
+
+    @property
+    def num_classes(self):
+        return 6
+
+    @property
+    def class_labels(self):
+        return ["Wake", "N1", "N2", "N3", "REM", "unknown"]
+
+    @property
+    def train_shards(self):
+        return 8
+    
+    @property
+    def dev_shards(self):
+        return 2
+    
+    def generator(self, data_dir, tmp_dir, is_training):
+        return _psg_isruc_generator(data_dir, tmp_dir, is_training)
+    
+    def preprocess_example(self, example, mode, unused_hparams):
+        image = example["inputs"]
+        image.set_shape([6000, 4, 1])
+        example["inputs"] = image
+        return example
+    
+if __name__ == '__main__':
+    tmp_dir = "/home/guo/data/sleepstage/sleepbrain/tmp"
+    psg_isruc_generator(_ISRUC_DIR, tmp_dir)

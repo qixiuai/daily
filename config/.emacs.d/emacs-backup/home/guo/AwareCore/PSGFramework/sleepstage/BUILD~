@@ -1,0 +1,12 @@
+cc_binary(
+    name = "sleepstage",
+    srcs = ["sleepstage.cc"],
+    deps = [
+        "@org_tensorflow//tensorflow/c:c_api",
+#        "@org_tensorflow//tensorflow/core:lib",
+#        "@org_tensorflow//tensorflow/core:framework",
+        "@org_tensorflow//tensorflow/core:tensorflow",
+#        "@org_tensorflow//tensorflow/cc/saved_model:loader",
+#        "@org_tensorflow//tensorflow:libtensorflow_cc.so",
+    ],
+)

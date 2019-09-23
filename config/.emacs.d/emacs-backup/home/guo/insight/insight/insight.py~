@@ -1,0 +1,52 @@
+
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from dash.dependencies import Input, Output
+
+import numpy as np
+import zmq
+
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+app.title = "Insight: A Data Visualization Tool"
+
+app.layout = html.Div(  
+    children = [
+        dcc.Graph(
+            id = "example-graph",
+        ),
+         dcc.Interval(
+            id='interval-component',
+            interval=1*1000, # in milliseconds
+             n_intervals=1,
+        )
+    ]
+)
+
+'''
+
+'''
+
+@app.callback(
+    Output(component_id='example-graph', component_property='figure'),
+    [Input('interval-component', 'n_intervals')],
+)
+def update_output_div(n):
+    figure = {
+        'data' : [
+                    {'x':list(range(10)), 'y':np.random.randn(10), 'type':'scatter+line', 'name':'Signal 1'},
+                    {'x':list(range(10)), 'y':np.random.randn(10), 'type':'scatter+line', 'name':'Signal 2'},
+                ],
+        'layout' : {
+            'title' : 'Figure One',
+        }
+    }
+    return figure;
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)

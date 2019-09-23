@@ -1,0 +1,7 @@
+
+example:
+	clang++ example.cc -lpthread -lcrypto -lssl -lboost_system -lcpprest
+
+
+
+

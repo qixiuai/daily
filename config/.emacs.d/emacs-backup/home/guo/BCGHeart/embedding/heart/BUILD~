@@ -1,0 +1,27 @@
+
+cc_library(
+    name = "bcg",
+    srcs = ["bcg.cc"],
+    hdrs = ["bcg.h"],
+)
+
+cc_library(
+    name = "autopeaks",
+    srcs = ["autopeaks.cc"],
+    hdrs = ["autopeaks.h"],
+)
+
+cc_library(
+    name = "findpeaks",
+    srcs = ["findpeaks.cc"],
+    hdrs = ["findpeaks.h"],
+)
+
+cc_binary(
+    name = "main",
+    srcs = ["main.cc"],
+#    deps = [":findpeaks"],
+)
+
+
+

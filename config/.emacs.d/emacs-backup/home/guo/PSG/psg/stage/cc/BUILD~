@@ -1,0 +1,22 @@
+
+cc_binary(
+    name = "model_test",
+    srcs = ["model_test.cc"],
+    deps = [":model", "@spdlog"],
+)
+
+cc_library(
+    name = "model",
+    srcs = ["model.cc"],
+    hdrs = ["model.h"],
+    deps = [
+        "@org_tensorflow//tensorflow/c:c_api",
+        "@com_google_absl//absl/strings/string_view.h",
+    ],
+)
+
+cc_binary(
+    name = "demo",
+    srcs = ["sleepstage.cc", "sleepstage.h"],
+    deps = ["@spdlog"],
+)

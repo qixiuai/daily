@@ -1,0 +1,40 @@
+#include <algorithm>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <deque>
+#include <map>
+#include <boost/circular_buffer.hpp>
+
+
+namespace physio {
+  
+  template<class T>
+    using Queue = std::deque<T>;
+  
+  template <class T>
+    using Buffer = boost::circular_buffer<T>;
+
+  template <class T>
+  class EventQueues {
+  public:
+    EventQueues() {}
+    void push_back(std::string event_name, T value) {
+      if (event_queues.find(event_name) == event_queues.end()) {
+	event_queues[event_name] = Queue<T>();
+      }
+      return event_queues[event_name].push_back(value);
+    }
+    T pop_front(std::string event_name) {
+      if (event_queues.find(event_name) == event_queues.end()) {
+	return -1; // -1 -- unexpected key
+      }
+      T value = event_queues[event_name].front();
+      event_queues[event_name].pop_front();
+      return value;
+    }
+  private:
+    std::map<std::string, Queue<T>> event_queues;
+  };
+  
+};// end namespace physio

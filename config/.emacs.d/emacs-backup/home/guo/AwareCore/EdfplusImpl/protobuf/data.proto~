@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package edfplus;
+
+optional cc_enable_arenas = true;
+
+message Data {
+  repeat DataRecord record;
+}
+
+message DataRecord {
+  repeat Array samples;
+}

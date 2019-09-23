@@ -1,0 +1,7 @@
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "misc",
+    srcs = ["misc.py"],
+    deps = ["//pai/utils:flags"]
+)

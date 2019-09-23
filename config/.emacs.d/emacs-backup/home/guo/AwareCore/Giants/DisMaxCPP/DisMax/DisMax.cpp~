@@ -1,0 +1,41 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <fstream>
+
+
+class SignalReader {
+private:
+  int* buffer;
+  int  buffer_size;
+public:
+  SignalReader() {}
+  
+  std::vector<int> outputSignal() {
+    std::vector<int> vec(buffer, buffer+buffer_size);
+    return vec;
+  }
+
+  void readNextSegment(int* signal_segment, int segment_size) {
+    // Interface between C#/Java and C++  
+  }
+  
+  void readNextSegmentFromFile(std::ifstream file) {
+    int sample;
+    int num_sample = 0;
+    while (sample << file) {
+      num_sample += 1;
+      buffer[num_sample] = sample;
+    }
+    if (num_sample == buffer_size) {
+      return not-end-of-file;
+    }
+    return end-of-file;
+  }
+};
+
+int main() {
+  
+  
+  return 0;
+}

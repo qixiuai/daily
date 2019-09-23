@@ -1,0 +1,74 @@
+
+#include "burn/body_action_report.h"
+
+namespace burn {
+
+  void GetBodyActionsEpochFromEvents(std::vector<float>& events_epochs,
+				     std::vector<Event> events,
+				     int fs=1) {
+    // assume resp_epochs allocated with 0s
+    int num_events = events.size();
+    for (int i = 0; i < num_events; i++) {
+      auto event = events[i];
+      auto start_epoch_id = IndexToEpochID(event.start, fs);
+      auto end_epoch_id = IndexToEpochID(event.end, fs);
+      int prev_end_index = event.start;
+      int final_end_index = event.end;
+      float dur = 0;
+      for (int epoch_id = start_epoch_id;
+	   epoch_id <= end_epoch_id;
+	   epoch_id++) {
+	int epoch_end_index = EpochIDToEpochEndIndex(epoch_id);
+	if (final_end_index <= epoch_end_index)
+	  dur = final_end_index - prev_end_index;
+	else {
+	  dur = epoch_end_index - prev_end_index;
+	  prev_end_index = epoch_end_index;
+	}
+	dur /= fs;
+	plms_epochs[epoch_id] += dur;
+	dur = 0;
+      }
+    }
+  }
+  
+  void BodyActionReport::Run() {
+    auto& chart_body_actions = rets_->chart_body_actions;
+    auto stages = args_->stages;
+    auto body_actions = args_->body_actions;
+    
+    float num_epochs = stages.size();
+    
+    // chart
+    auto body_actions_epochs = std::vector<float>(num_epochs, 0);
+    GetBodyActionsEpochFromEvents(body_actions_epochs, body_actions);
+    
+    chart_body_actions.append("BAction,");
+    for (auto state : body_actions_epochs) {
+      chart_body_actions.append(std::to_string(state) + ',');
+    }
+    chart_body_actions[chart_body_actions.size()-1] = '\n';
+    
+  }
+  
+  
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

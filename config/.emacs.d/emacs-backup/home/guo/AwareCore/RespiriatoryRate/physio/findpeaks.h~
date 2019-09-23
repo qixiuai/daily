@@ -1,0 +1,29 @@
+#include <vector>
+#include <boost/circular_buffer.hpp>
+
+using std::vector;
+template <class T>
+using buffer = boost::circular_buffer<T>;
+
+class RespirateDetector {
+public:
+  RespirateDetector(int update_interval=75,
+		    float threshold=0.75,
+		    int min_dist=100,
+		    int num_cycle=5);
+
+  int run(int value);
+private:
+  buffer<int>   __signal_;
+  buffer<int> __recent_ipks_;
+  int __update_interval_;
+  float __threshold_;
+  int __min_dist_;
+  int __update_clock_;
+  int __ipk_delay_;
+  int __current_respiratory_rate_;
+  uint64_t __next_value_index_;
+    
+  void __real_run();
+  void __update_respiratory_rate();
+};

@@ -1,0 +1,25 @@
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses["notice"]
+
+cc_library(
+    name = "pplx",
+    includes = ["include"],
+    deps = select({
+        "@bazel_tools//src/conditions:windows" : ["pplx_win"],
+        "//conditions:default" : ["pplx_linux"],
+    }),
+)
+
+cc_library(
+    name = "pplx_win",
+    hdrs = glob(["include/**/*.h"], exclude=["include/pplx/pplxlinux.h"])
+)
+
+cc_library(
+    name = "pplx_linux",
+    hdrs = glob(["include/**/*.h"], exclude=["include/pplx/pplxwin.h"])
+)

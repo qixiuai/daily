@@ -1,0 +1,22 @@
+
+#ifndef BURN_SIMPLE_RESP_H_
+#define BURN_SIMPLE_RESP_H_
+
+#include <vector>
+#include "burn/common_type.h"
+
+
+namespace burn {
+
+std::vector<float> maxmin_filter(const std::vector<float>& signal,
+				 int window = 1000,
+				 int step = 50);
+
+std::vector<float> baseline_filter(std::vector<float>& signal,
+				   int window = 60000);
+
+std::vector<Event> detect_events(const std::vector<float>& signal, float precent);
+
+}
+  
+#endif

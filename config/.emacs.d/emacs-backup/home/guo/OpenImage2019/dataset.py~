@@ -1,0 +1,72 @@
+
+import os
+import pdb
+import pandas as pd
+import numpy as np
+
+from tqdm import tqdm
+
+data_dir = "/home/guo/Github/OpenImage2019/data/raw/"
+
+
+class OID(object):
+
+    def __init__(self, mode="train"):
+        self.mode = mode
+        if mode == "train":
+            self.bbox = pd.read_csv(data_dir + "challenge-2019-train-detection-bbox.csv").head(20000)
+        else:
+            self.bbox = pd.read_csv(data_dir + "challenge-2019-validation-detection-bbox.csv").head(10000)
+
+        # iterator
+        image_ids = self.bbox["ImageID"].unique()
+        np.random.shuffle(image_ids)
+        self.image_ids = image_ids
+        self.current_index = 0
+
+        # encoder
+        self.label_name = {}
+        self.name_label = {}
+        names = self.bbox["LabelName"].unique()
+        for ind, name in enumerate(names):
+            ind += 1
+            self.label_name[ind] = name
+            self.name_label[name] = ind
+
+    def encode_label(self, name):
+        return self.name_label[name]
+
+    def decode_label(self, label):
+        return self.label_name[label]
+        
+    def load_image(self, image_id):
+        pass
+
+    def __len__(self):
+        return len(self.image_ids)
+    
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            image_id = self.image_ids[self.current_index]
+        except IndexError:
+            raise StopIteration
+        image_path = os.path.join(data_dir, "raw", str(self.mode), image_id+".jpg")
+        df = self.bbox[self.bbox["ImageID"] == "8d6dec80235b6fea"]
+        label_names = df["LabelName"].values
+        labels = list(map(self.encode_label, label_names))
+        boxes = df[["XMin", "XMax", "YMin", "YMax"]].values
+        roidb = {"image_path": image_path, "boxes": boxes, "label_names": label_names, "label": labels}
+        self.current_index += 1
+        return roidb
+
+
+if __name__ == "__main__":
+    dataset = OID()
+    for example in tqdm(dataset):
+        print(example)
+        break
+
+

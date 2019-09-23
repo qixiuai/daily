@@ -1,0 +1,62 @@
+
+from absl import flags
+from absl import app
+from absl import logging
+
+import numpy as np
+import random
+import peakutils
+
+import pdb
+
+from collections import namedtuple
+
+#Params = namedtuple("Params", ["init_thres", "cycle_min", "cycle_max", "cycle_std", "on_thres"])
+
+class AdapPeaks(object):
+    """ adaptive find peaks for PSG signals"""
+
+    def __init__(self, init_thres, cycle_min, cycle_max):
+        self._peaks   = []
+        self._samples = []
+        self._thres = init_thres
+        self._min_dist = cycle_min
+        self._cycle_min = cycle_min
+        self._cycle_max = cycle_max
+        
+    def train(self, signals):
+        # unsupervised training
+        raise NotImplementedError()
+        
+    @property
+    def peaks(self):
+        return self._peaks
+
+    def findpeaks(self, samples):
+        signal_size = len(samples)
+        window_size = int(self._cycle_max * 0.2)
+        buffer_size = window_size + int(self._cycle_min * 0.5)
+        step = int(self._cycle_min * 0.5)
+        first = True
+        for i in range(buffer_size, signal_size, step):
+            peaks = peakutils.indexes(np.asarray(samples[i-buffer_size:i]),
+                                      thres = self._thres,
+                                      min_dist = self._cycle_min)
+            if first:
+                self._peaks.extend(peaks)
+                first = False
+                continue
+            for peak in peaks:
+                peak = peak + i - buffer_size
+                if peak > self._peaks[-1]:
+                    self._peaks.append(peak)
+        return self.peaks
+
+def main(unused):
+    del unused
+    adapeak = AdapPeaks(init_thres=0.8, cycle_min=500, cycle_max=30000)
+    signal = [random.randint(0,1000) for i in range(10000)]
+    peaks = adapeak.findpeaks(signal)
+    
+if __name__ == '__main__':
+    app.run(main)

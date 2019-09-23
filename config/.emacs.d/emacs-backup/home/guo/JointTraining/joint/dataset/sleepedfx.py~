@@ -1,0 +1,63 @@
+""" sleepedfx dataset """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import numpy as np
+
+from absl import app
+from absl import flags
+from absl import logging
+
+import tensorflow as tf
+
+import pdb
+
+from joint.dataset import Dataset
+
+class SleepEdfx(Dataset):
+
+    def __init__(self):
+        super(Dataset, self).__init__()
+
+    def generate_dataset(self):
+        pass
+
+    def __call__(self):
+        pass
+
+
+def sleepedfx(data_dir=""):
+    data_dir = "/home/guo/data/sleepstage/preprocess/" + \
+      "sleep-edfx/sleep-cassette/eeg_fpz_cz"
+    dataset = None
+    val_dataset = None
+    for file in os.listdir(data_dir):
+        path = os.path.join(data_dir, file)
+        data = np.load(path)
+        X, y = data['x'], data['y']
+        X = X.reshape((-1, 3000, 1))
+        y = tf.one_hot(y, 5)
+        subject_dataset = tf.data.Dataset.from_tensor_slices((X, y))
+        if dataset is None:
+            dataset = subject_dataset
+            val_dataset = subject_dataset
+            #return dataset
+        else:
+            dataset = dataset.concatenate(subject_dataset)
+    return dataset, val_dataset
+
+
+def main(argv):
+    del argv
+    
+if __name__ == '__main__':
+    app.run(main)
+
+
+
+
+
+

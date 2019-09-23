@@ -1,0 +1,6 @@
+cc_import(
+    name = "libzmq",
+    hdrs = glob(["*.h"]),
+    shared_library = "libzmq.so",
+    visibility = ["//visibility:public"],
+)

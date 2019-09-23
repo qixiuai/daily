@@ -1,0 +1,17 @@
+
+from glob import glob
+
+import os
+import shutil
+
+src_dir = "../raw/train/"
+dst_dir = "train/"
+
+files = glob(src_dir+"**.jpg")
+
+for file in files[:10]:
+    src = file
+    dst = os.path.join(dst_dir, os.path.basename(file))
+    print(dst)
+    shutil.copy(src, dst)
+    

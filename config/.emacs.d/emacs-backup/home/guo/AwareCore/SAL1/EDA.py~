@@ -1,0 +1,96 @@
+import os
+import logging
+import matplotlib.pyplot as plt
+import time
+import numpy as np
+from scipy import signal
+from sal import Hilbert
+
+
+logger = logging.getLogger('eda')
+
+def set_logger(logger):
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler('eda.log')
+    fh.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    return logger
+logger = set_logger(logger)
+    
+def plot_data(x, y):
+    plt.figure();
+    plt.plot(x,y);
+    plt.show();
+
+class Algorithm(object):
+    
+    def __init__(self, Fz):
+        self.__window_size_ = Fz*1;
+        self.__signal_      = []
+        self.__movavg_      = []
+        self.__movdev_      = []
+        self.__stddev_      = []
+        self.__len_         = 0
+        
+    def run(self, x):
+        self.__signal_.append(x);
+        self.__stddev_.append(np.std(self.__signal_));
+        self.__len_ += 1
+        if self.__len_ > self.__window_size_:
+            self.__signal_.pop(0);
+            self.__stddev_.pop(0);
+            self.__len_ -= 1
+
+    def plt_show(self):
+        plt.figure();
+        t = range(self.__len_);
+        plt.plot(t, self.__signal_, 'b');
+        plt.plot(t, self.__stddev_, 'r');
+        plt.plot(t, [60 for x in t], 'g');
+        plt.show();
+        
+    def mean(self, arr):
+        return sum(arr) / len(arr);
+    
+def load_data(file_path):
+    data = []
+    with open(file_path) as file:
+        for num_str in file:
+            num = int(num_str)
+            data.append(num)
+    return data;
+                
+def expr_algorithm(file_path):
+    logger.info("start parse {}".format(file_path))
+    data = load_data(file_path)
+    alg = Algorithm(Fz=1000);
+    i = 0
+    print(len(data))
+    for num in data:
+        i += 1;
+        alg.run(num);
+        if i % 1000 == 0:
+            print(i)
+            alg.plt_show();
+
+def expr_hilbert(file_path):
+    logger.info("start parse {}".format(file_path))
+    data = load_data(file_path)
+    hil = Hilbert(Fz=1000);
+    envelope, freq  = hil.apply(data)
+    plt.figure()
+    t = range(len(data));
+    plt.plot(t, data, 'b')
+ #   plt.plot(t, envelope, 'b')
+    plt.plot(t[1:], freq, 'r')
+    plt.show();
+    
+if __name__ == '__main__':
+    file_path = "data/100k.txt";
+    expr_hilbert(file_path)

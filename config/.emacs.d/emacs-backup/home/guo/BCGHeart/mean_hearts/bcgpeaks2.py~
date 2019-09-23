@@ -1,0 +1,34 @@
+
+import numpy as np
+import peakutils
+
+
+class AutoPeaks(object):
+
+    def __init__(self):
+        pass
+
+
+def findpeaks(signal, thres=0.73, pair_dist=10, min_dist=300):
+    if isinstance(signal, list):
+        signal = np.asarray(signal)
+    diff = np.diff(signal)
+    diff_abs = np.abs(diff)
+    zero_peak_indices = peakutils.indexes(-diff_abs, thres=0.9, min_dist=pair_dist)
+    peak_indices = peakutils.indexes(diff_abs, thres=thres, min_dist=pair_dist)
+    peak_pairs = []
+    num_peaks = len(peak_indices)
+    for ind in range(num_peaks-1):
+        curr_peak_index = peak_indices[ind]
+        next_peak_index = peak_indices[ind+1]
+        curr_peak_value = diff[curr_peak_index]
+        next_peak_value = diff[next_peak_index]
+        if curr_peak_value * next_peak_value < 0:
+            pair_peak_value = np.abs(curr_peak_value) + np.abs(next_peak_value)
+            zero_peak_index = curr_peak_index + \
+                              np.argmin(diff_abs[curr_peak_index:next_peak_index])
+            peak_pairs.append((zero_peak_index, curr_peak_index, next_peak_index, pair_peak_value))
+
+
+
+            

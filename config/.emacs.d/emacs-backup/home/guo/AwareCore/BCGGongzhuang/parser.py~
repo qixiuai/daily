@@ -1,0 +1,214 @@
+import os
+import sys
+import traceback
+import cProfile
+import time
+import pdb
+
+class TCPPacket(object):
+    def __init__(self, bytes):
+        self.__buffer_ = bytes
+        self.__buffer_length_ = len(bytes)
+        self.__index_ = 0
+
+    def isend(self):
+        return self.__index_ >= self.__buffer_length_
+
+    def getbytes(self, st, ed):
+        return self.__buffer_[st+self.__index_:ed+self.__index_]
+    
+    def __getitem__(self, index):
+        real_index = self.__index_ + index;
+        if real_index >= self.__buffer_length_:
+            return None;
+        return self.__buffer_[real_index];
+        
+    def skip(self, nbytes):
+        self.__index_ += nbytes;
+
+    def read_char(self):
+        byte = self.__buffer_[self.__index_]
+        char = chr(byte)
+        self.__index_ += 1
+        return char
+
+    def front(self):
+        return self.__buffer_[self.__index_]
+
+class FrameFlags(object):
+    def __init__(self):
+        self.__frame_start_ = 0x02;
+        self.__data_end_    = 0x0d;
+        self.__frame_end_   = 0x03;
+        
+    def is_framehead(self, tcp_packet):
+        return tcp_packet.front()  == self.__frame_start_
+
+    def is_dataend(self, tcp_packet):
+        return tcp_packet.front() == self.__data_end_
+
+    def nbytes_to_skip_framehead(self, tcp_packet, debug=True):
+        # header_demo = b'\x02P142$031500000110#'
+        # len(header_demo) == 19
+        if debug:
+            print("TCP Packet Header: ", end='')
+            for i in range(19):
+                print(tcp_packet[i])
+        return 19
+
+    def nbytes_to_skip_frametail(self, tcp_packet, debug=False):
+        # tail_demo = b'\rB68A\x03'
+        if debug:
+            print("TCP Packet Tail: ", end='')
+            for i in range(6):
+                print(tcp_packet[i])
+        return 6
+
+class Parser(object):
+    def __init__(self):
+        self.__data_str_ = ""
+        self.__packet_indexes = []
+        self.__cur_packet_index = ""
+        
+    def parse(self, line):
+        i = 0
+        tic  = time.time()
+        frameflags = FrameFlags()
+        tcp_packet = TCPPacket(line)
+        nbytes_to_skip_framehead = 19
+        nbytes_to_skip_frametail = 6
+        bcg_data = []
+        try:
+            while (True):
+                if (frameflags.is_dataend(tcp_packet)):
+                    tcp_packet.skip(nbytes_to_skip_frametail)
+                    bcg_data.extend(self.__parse_packet()) 
+                    self.__data_str_ = ""
+                    #print(bcg_data)
+                if (tcp_packet.isend()):
+                    break;
+                if (frameflags.is_framehead(tcp_packet)):
+                    self.__cur_packet_index = tcp_packet.getbytes(2, 5)
+                    self.__data_str_ += "-"+"".join(list(map(chr, tcp_packet.getbytes(2, 5))))+','
+                    nbytes = nbytes_to_skip_framehead
+                    tcp_packet.skip(nbytes)
+                if (len(line) == 0):
+                    break;
+                i += 1;
+                char = tcp_packet.read_char();
+                #pdb.set_trace()
+                self.__data_str_ += char;
+                if (tcp_packet.isend()):
+                    break
+        except:
+            exc_type, exc_value, exc_traceback = sys.exc_info();
+            info = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback));
+            self.__data_str_ = ""
+            print(line)
+            print(info);
+            return bcg_data;
+        return bcg_data
+
+    def __parse_packet(self):
+        __parsed = [];
+        __num_strs = self.__data_str_.split(',');
+        for __num_str in __num_strs:
+            if (len(__num_str) == 0):
+                continue;
+            __parsed.append(int(__num_str));
+        return __parsed;
+    
+class OldParser:
+    def __init__(self):
+        self.__packet_ = "";
+        self.__start_of_frame_ = 0x02;
+        self.__end_of_data_    = 0x0d;
+        self.__end_of_frame_   = 0x03;
+        self.__history_offset_ = 0;
+        self.__packet_indexes  = [];
+        
+    def parse(self, line):
+        parsed_frame = [];
+        line = line[self.__history_offset_:];
+        i    = 0;
+        tic  = time.time();
+        try:
+            while (True):
+                if i % 1000 == 0:
+                    toc = time.time()
+                    dur = toc - tic
+                    tic = toc
+                    print("{}th duration: {}".format(i, dur))
+                if (self.__is_tail_of_frame(line)):
+                    line = self.__skip_tail_of_frame(line); # FIXME when tailer accross tcp packets
+                    parsed_frame.extend(self.__parse_packet());
+                    self.__packet_ = "";
+                    print(parsed_frame)
+                if (len(line) == 0):
+                    break;
+                if (self.__is_head_of_frame(line)): # FIXME when header accross tcp packets
+                    line = self.__skip_head_of_frame(line);
+                    print("head")
+                if (len(line) == 0):
+                    break;
+#                char, line = chr(line[0]), line[1:];
+                char = chr(line[i])
+                i += 1                
+                self.__packet_ += char;
+                if (len(line) == 0):
+                    break;
+        except:
+            exc_type, exc_value, exc_traceback = sys.exc_info();
+            info = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback));
+            print(info);
+            return parsed_frame;
+        return parsed_frame
+
+    def __parse_packet(self):
+        __parsed = [];
+        __num_strs = self.__packet_.split(',')
+        for __num_str in __num_strs:
+            if (len(__num_str) == 0):
+                continue;
+            try:
+                __parsed.append(int(__num_str))
+            except:
+                print("unexpected: {}".format(__num_str))
+        return __parsed;
+    
+    def __is_head_of_frame(self, line):
+        return line[0] == self.__start_of_frame_;
+
+    def __is_tail_of_frame(self, line):
+        return line[0] == self.__end_of_data_;
+
+    def __skip_head_of_frame(self, line):
+        line_len   = len(line);
+        header_len = 16 + 3;
+        if (line_len <= header_len):
+            self.__history_offset_ = header_len - line_len;
+            return "";
+        print(line[2:2+3]);
+        self.__packet_indexes.append(int(line[2:2+3]));
+        line = line[header_len:];
+        return line;
+    
+    def __skip_tail_of_frame(self, line):
+        line_len = len(line);
+        tailer_len = 6;
+        if (line_len <= tailer_len):
+            self.__history_offset_ = tailer_len - line_len;
+            return "";
+        line = line[tailer_len:]
+        return line;
+    
+
+if __name__ == '__main__':
+    parser_obj = Parser()
+    with open("tcp_binary_data.txt", 'rb') as f:
+        line = f.readline()
+#        parser_obj.parse(line)
+        cProfile.run(parser_obj.parse(line))
+    with open("tcp_parsed_packet_indexes.csv") as f:
+        for index in parser_obj.__packet_indexes:
+            f.write(index+'\n')

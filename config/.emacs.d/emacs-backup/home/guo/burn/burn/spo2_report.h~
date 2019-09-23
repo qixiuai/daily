@@ -1,0 +1,63 @@
+
+#ifndef BURN_SPO2_REPORT_H_
+#define BURN_SPO2_REPORT_H_
+
+
+#include <map>
+#include <vector>
+
+#include "burn/common_type.h"
+
+namespace burn {
+  
+  class Spo2Report {
+  public:
+    struct Args {
+      std::vector<int> stages;
+      int sleep_onset_epoch_id;
+      std::vector<float> spo2;
+      std::vector<Event> desats;
+      
+      Args(std::vector<int> stages,
+	   int sleep_onset_epoch_id,
+	   std::vector<float> spo2,
+	   std::vector<Event> desats) {
+	this->stages = stages;
+	this->sleep_onset_epoch_id = sleep_onset_epoch_id;
+	this->spo2 = spo2;
+	this->desats = desats;
+      }
+    };
+
+    struct Spo2Epoch {
+      float min;
+      float max;
+      Spo2Epoch() {
+	this->min = 0;
+	this->max = 0;
+      }
+      Spo2Epoch(float min, float max) {
+	this->min = min;
+	this->max = max;
+      }
+    };
+    
+    struct Rets {
+      std::map<std::string, float> table;
+      std::vector<Spo2Epoch> spo2_epochs;
+    };
+
+    Spo2Report(Rets* rets, const Args* args): args_{args}, rets_{rets} {}
+    void Run();
+
+  private:
+    const Args* args_;
+    Rets* rets_;
+  };
+
+
+}
+
+
+
+#endif

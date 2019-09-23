@@ -1,0 +1,9 @@
+import torch
+
+def run():
+  torch.multiprocessing.freeze_support()
+  print("lo")
+
+
+if __name__ == '__main__':
+  run()

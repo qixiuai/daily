@@ -1,0 +1,91 @@
+from __future__ import print_function
+import argparse
+import torch
+import torch.utils.data
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from torch.autograd import Function
+from scipy.io import loadmat
+import numpy as np
+from collections import namedtuple
+
+
+def load_data(mat_file, data_dir="data/"):
+    data = loadmat(data_dir+mat_file);
+    X, Y = data["X"], data["Y"];
+    X = X.flatten();
+    Y = Y.flatten();
+    return (X, Y);
+
+class BCGDataset(Dataset):
+    def __init__(self, mat_file, seqlen=1):
+        self.seqlen = seqlen;
+        X, Y = load_data(mat_file);
+        X = torch.from_numpy(X);
+        
+        self.X = X.type(torch.FloatTensor)
+        
+
+    def __len__(self):
+        return self.X.shape[0];
+
+    def __getitem__(self, ind):
+        x = self.X[ind:ind+self.seqlen];
+        y = self.Y[ind+self.seqlen];
+        x = x.view(1,-1);
+        return (x, y);
+
+class LSTMPeaker(nn.Module):
+    """
+    Peak Locator Model
+    """
+    def __init__(self):
+        super(LSTMPeaker, self).__init__();
+        self.lstm     = nn.LSTM(1,3, batch_first=True);
+        self.linear   = nn.Linear(3, 1);
+        
+    def forward(self, inputs):
+        output, hidden = self.lstm(inputs);
+        output = F.sigmoid(self.linear(output));
+        return output;
+    
+def eval_accuracy(preds, truths):
+    pass
+    
+def train(model, device, train_loader, optimizer, epoch):
+    model.train();
+    criterion = nn.NLLLoss();
+    for batch_ind, (data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device);
+        optimizer.zero_grad();
+        print(data)
+        output = model(data);
+        print(output)
+        loss   = criterion(output, target);
+        loss.backward();
+        optimizer.step();
+        
+def test(model, test_loader):
+    model.test();
+    pass
+
+def main():
+    torch.manual_seed(2018);
+    HP = namedtuple("HyperParameters", ["use_cuda", "epochs", "lr", "momentum"])
+    hp = HP(use_cuda=False, epochs=5,  lr=0.001, momentum=0.9);
+    device   = torch.device("cuda" if hp.use_cuda else "cpu");
+
+    mat_file = "glt_labeled.mat";
+    train_dataset = BCGDataset(mat_file);
+    train_loader  = torch.utils.data.DataLoader(train_dataset, batch_size=1);
+    model = LSTMPeaker().to(device);
+    optimizer = optim.SGD(model.parameters(), lr=hp.lr, momentum=hp.momentum);
+    for epoch in range(4):
+        train(model, device, train_loader, optimizer, epoch);
+        
+if __name__ == '__main__':
+    model = Net();
+    print(model)
+    main();

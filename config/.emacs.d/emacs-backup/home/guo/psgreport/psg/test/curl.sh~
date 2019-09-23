@@ -1,0 +1,19 @@
+#!/bin/bash
+
+HOST=http://localhost:8000
+
+# put edfdata
+#
+#curl -X PUT -H "Content-Type: application/octet-stream"  -T "/home/guo/data/psg/physio/psg_test.edf"  ${HOST}
+
+#exit 0
+
+HEX="d6323050b6d948ea685181f587b53e8671cd8b33d3772277afb957e41097f98b"
+# post events
+#curl -X POST -H "Content-Type: application/json" -d '{"d6323050b6d948ea685181f587b53e8671cd8b33d3772277afb957e41097f98b/Events/Stage/":"1,2,0,1\n"}' ${HOST}/${HEX}/Events/Stage/
+
+curl -X GET -H "Content-Type: application/json" ${HOST}/${HEX}/Events/Stage/
+
+#curl -X GET -H "Content-Type: application/json" ${HOST}/${HEX}/Report/
+
+

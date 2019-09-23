@@ -1,0 +1,36 @@
+
+#include <algorithm>
+#include <vector>
+
+#include "peak.h"
+
+namespace peak {
+
+  enum Status {success, failure};
+
+  // find peaks in data at target region
+  template <class Container>
+  Status FindPeaks(std::vector<int>* ipks,
+		   const Container::Iterator& begin,
+		   const Container::Iterator& end,
+		   float min_height, int min_dist) {
+    
+    
+    
+    return Status::success;
+  }
+
+  template <class Container>
+  float DetermineMinHeight(const Container::Iterator& begin,
+			   const Container::Iterator& end,
+			   float threshold) {
+    float max = *std::max_element(begin, end);
+    float min = *std::min_element(begin, end);
+    float min_height = (max - min) * threshold + min;
+    return min_height;
+  }
+  
+} // end namespace peak
+
+
+

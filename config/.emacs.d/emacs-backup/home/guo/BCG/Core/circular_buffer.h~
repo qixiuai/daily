@@ -1,0 +1,24 @@
+#ifndef _AWARETECH_CORE
+#define _AWARETECH_CORE
+
+#include <type_traits>
+#include <memory>
+#include <stdexcept>
+#include <algorithm>
+
+namespace AwareTech {
+  namespace Core {
+    template <class _Tp, class _Allocator = std::allocator<_Tp> >
+      class CircularBuffer {
+      
+
+    };
+
+    
+    
+  }
+}
+
+
+
+#endif

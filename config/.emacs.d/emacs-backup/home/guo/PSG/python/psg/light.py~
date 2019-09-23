@@ -1,0 +1,24 @@
+
+from edf import Edfplus
+
+from absl import flags
+from absl import app
+from absl import logging
+
+import pdb
+
+FLAGS = flags.FLAGS
+
+def main(unused_arg):
+    del unused_arg
+    with open(FLAGS.edf_path, "rb") as file:
+        raw = file.read()
+    edfplus = Edfplus(raw)
+    logging.info(edfplus.num_signals)
+    logging.info(edfplus.signal_freqs)
+    light = "Event light"
+    signal = edfplus.signals[light]
+
+
+if __name__ == '__main__':
+    app.run(main)

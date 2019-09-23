@@ -1,0 +1,180 @@
+""" ISRUC dataset """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import pdb
+import glob
+import time
+import random
+import pickle
+import shutil
+import numpy as np
+import matplotlib.pyplot as plt
+
+from scipy.io import loadmat
+from join.dataset import Dataset
+
+
+np.random.seed(2019)
+
+
+def _mat2labelpath(matpath):
+    subject_id = os.path.basename(matpath)[7:-4]
+    dirname = os.path.dirname(matpath)
+    dirname = dirname.replace("Extractedchannels", "")
+    dirname = dirname.replace("ExtractedChannels", "")
+    dirname = dirname.replace("-", "")
+    # ...subgroup1/1/1_1.txt
+    labelpath = dirname + "/" + str(subject_id) + "/" + str(subject_id) + "_1.txt"
+    return labelpath
+
+
+class IsrucDataset(Dataset):
+
+    def __init__(self):
+        super(IsrucDataset).__init__("isruc")
+        
+    def load_labels(self, matpath):
+        labelpath = _mat2labelpath(matpath)
+        label = np.loadtxt(labelpath)
+        return label
+
+    def produce_heart_rates_example(self, file_path):
+        epochs = loadmat(file_path)['X2'] # ecg
+        labels = self.load_labels(file_path)
+        num_epochs = epochs.shape[0]
+        hrs_deque = deque(maxlen=9)
+        #ecg_deque = deque(maxlen=10)
+        label_deque = deque(maxlen=9)
+        for ind in range(num_epochs):
+            ecg = epochs[ind, :]
+            label = labels[ind]
+            if label == 0:
+                label = 0
+            elif label == 1:
+                label = 1
+            elif label == 2:
+                label = 1
+            elif label == 3:
+                label = 2
+            elif label == 4:
+                print("found label is 4", flush=True)
+                label = 2
+            elif label == 5:
+                label = 3
+            else:
+                continue
+            hrs_epoch = self.extract_heart_rates_interpolated(ecg)
+            if len(hrs_epoch) < 120:
+                print("X", end=",")
+                continue
+            hrs_deque.append(hrs_epoch)
+            label_deque.append(label)
+            # make sure deque is full
+            if len(label_deque) < 9:
+                continue
+            hrs = np.concatenate(hrs_deque)
+            #hrs = self.extract_heart_rates_interpolated(ecg_raw)
+            #if len(hrs) < 50:
+            #    print("X",end="", flush=True)
+            #    continue
+            hrs = hrs.reshape(-1, 1)
+            label = label_deque[4]
+            #label = tf.one_hot(label, 3).numpy()
+            yield (hrs,label)
+
+    def generate_dataset(self, debug=True):
+        raw_mat_files = glob.glob(self._isruc_dir + "*/**.mat", recursive=True)
+        out_dir = self.tmp_dir
+        if os.path.isdir(out_dir):
+            print("remove directory: {}".format(out_dir))
+            shutil.rmtree(out_dir)
+        os.mkdir(out_dir)
+        i = 0
+        for file in raw_mat_files:
+            examples = self.produce_heart_rates_example(file)
+            subject_id = file[64:-4]
+            subject_id = subject_id.replace("/", "")
+            for example in examples:
+                example = {"X": example[0], "label": example[1]}
+                label = example["label"]
+                with open(out_dir+"/"+str(i) + "_" + subject_id + "_"+str(label), "wb") as f:
+                    pickle.dump(example, f)
+                i += 1
+                if i % 1000 == 0:
+                    print("generated {} examples".format(i))
+
+    def __call__(self, ecg=True):
+        wake_examples = glob.glob(self.tmp_dir+"/**_0")
+        light_sleep_examples = glob.glob(self.tmp_dir+"/**_1")
+        deep_sleep_examples = glob.glob(self.tmp_dir+"/**_2")
+        rem_sleep_examples = glob.glob(self.tmp_dir+"/**_3")
+        num_min_stage_examples = min(len(wake_examples),
+                                     len(light_sleep_examples),
+                                     len(deep_sleep_examples),
+                                     len(rem_sleep_examples))
+        random.seed(2019)
+        random.shuffle(wake_examples)
+        random.shuffle(light_sleep_examples)
+        random.shuffle(deep_sleep_examples)
+        random.shuffle(rem_sleep_examples)
+        if self.is_class_balanced:
+            wake_examples = wake_examples[:num_min_stage_examples]
+            light_sleep_examples = light_sleep_examples[:num_min_stage_examples]
+            deep_sleep_examples = deep_sleep_examples[:num_min_stage_examples]
+            rem_sleep_examples = rem_sleep_examples[:num_min_stage_examples]
+        num_selected = int(num_min_stage_examples * 0.8)
+        if self.is_train:
+            wake_examples = wake_examples[:num_selected]
+            light_sleep_examples = light_sleep_examples[:num_selected]
+            deep_sleep_examples = deep_sleep_examples[:num_selected]
+            rem_sleep_examples = rem_sleep_examples[:num_selected]
+        else:
+            wake_examples = wake_examples[num_selected:]
+            light_sleep_examples = light_sleep_examples[num_selected:]
+            deep_sleep_examples = deep_sleep_examples[num_selected:]
+            rem_sleep_examples = rem_sleep_examples[num_selected:]
+        files = wake_examples + light_sleep_examples + deep_sleep_examples + rem_sleep_examples
+        random.shuffle(files)
+        #print("num examples used: {}".format(len(files)))
+        for file in files:
+            with open(file, "rb") as f:
+                example = pickle.load(f)
+                X = example["X"]
+                # normalize each example by substract its median
+                X = X - np.median(X)
+                label = example['label']
+                label = tf.one_hot(label, 4)
+                yield (X, label)
+
+
+if __name__ == '__main__':
+    import tensorflow as tf
+    isruc = IsrucDataset()
+    generate_data = True
+    if generate_data:
+        isruc.generate_dataset()
+    dataset = tf.data.Dataset.from_generator(isruc, (tf.float32, tf.int64))
+    dataset = dataset.shuffle(buffer_size=64).batch(64)
+    mean = 0
+    count = 0
+    for x, y in dataset:
+        wake_ratio = np.sum(y[:, 0]) / 64.0
+        light_ratio = np.sum(y[:, 1]) / 64.0
+        deep_ratio = np.sum(y[:, 2]) / 64.0
+        rem_ratio = np.sum(y[:, 3]) / 64.0
+        if wake_ratio + light_ratio + deep_ratio + rem_ratio != 1:
+            print("expected in the last line")
+        mean = (mean * count + light_ratio) / (count + 1)
+        print( "sleep epoch ratio light: {}, deep: {}, rem:{}".format(
+            light_ratio, deep_ratio, rem_ratio))
+        count += 1
+
+
+
+
+
+

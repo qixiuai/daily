@@ -1,0 +1,11 @@
+
+#include <iostream>
+#include "model.h"
+#include "spdlog/spdlog.h"
+
+int main() {
+  spdlog::info("model test starts");
+  
+  
+  return 0;
+}

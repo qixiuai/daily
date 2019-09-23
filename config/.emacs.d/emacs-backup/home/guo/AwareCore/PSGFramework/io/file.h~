@@ -1,0 +1,56 @@
+#ifndef _PHYSIO_FILE_
+#define _PHYSIO_FILE_
+
+#include <vector>
+#include <string>
+#include <fstream>
+#include <iostream>
+
+#include "boost/circular_buffer.hpp"
+
+#include "Eigen/Dense"
+
+#include "absl/strings/str_split.h"
+
+namespace physio {
+  
+  template <class T>
+    std::vector<T> dlmread(filepath, delimiter, skiprows) {
+    std::ifstream infile(filepath);
+    if (!infile.open()) {
+      std::cerr << filepath + " not found!\n";
+      exit(0);
+    }
+    std::vector<T> data;
+    string line;
+    while (getline(infile, line)) {
+      auto vec = StrSplit(line, delimiter);
+      
+    }
+    
+  }
+
+  template <class T>
+    vector<T> dlmwrite(filepath) {
+
+  }
+
+  template <class T>
+    vector<T> csvread(filepath) {
+
+  }
+
+  template <class T>
+    vector<T> csvwrite(filepath) {
+    
+  }
+  
+  template <class T>
+    vector<T> datread(filepath) {
+
+  }
+  
+}; //end namespace physio
+
+#endif
+

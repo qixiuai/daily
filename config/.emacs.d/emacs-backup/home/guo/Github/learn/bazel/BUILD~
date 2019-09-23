@@ -1,0 +1,13 @@
+cc_binary(
+    name = "hello",
+    srcs = ["helloworld.cc"],    
+)
+
+platform(
+    name = 'windows_x86',
+    constraint_values = [
+      '@bazel_tools//platforms:windows',
+      '@bazel_tools//platforms:x86_64',
+    ],
+    compiler="clang++",
+)

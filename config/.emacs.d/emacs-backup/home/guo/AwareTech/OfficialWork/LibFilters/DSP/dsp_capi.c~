@@ -1,0 +1,66 @@
+#include "dsp.h"
+#include <string>
+#include <map>
+
+extern "C" {
+  // General API call
+  // for Butterworth, assume param[0] is order
+  // better return some diagnostic information
+  void filt(Signal signal, SignalSize signal_size, \
+		FilterType filter_type, Algorithm algorithm, \
+		Param param, ParamSize param_size) {
+
+    dsp::Filter* filter = producefilter(filter_type, algorithm, param, param_size);
+    filter_setparams(filter, param, param_size);
+    filter_process(filter, num_samples, signal);
+  }
+
+}
+
+// dsp::Filter* filter
+void producefilter(FilterType filter_type, Algorithm algorithm,		\
+				  Param param, ParamSize param_size) {
+}
+
+typedef enum{dsp::Filter*, (dsp::Filter*)(*Fn)(int)} GeneralFilter;
+typedef std::map<std::string, GeneralFilter> FilterHashTable;
+
+FilterHashTable& init_filterhashtable() {
+  FilterHashTable hash_table;
+
+  hash_table["lowpass+butterworth"] = [](int order){ return dps::Butterworth::LowPass<order>;};
+  hash_table["highpass+butterworth"] = [](int order){ return dps::Butterworth::HighPass<order>;};
+  hash_table["bandpass+butterworth"] = [](int order){ return dps::Butterworth::BandPass<order>;};
+  hash_table["bandstop+butterworth"] = [](int order){ return  dps::Butterworth::BandStop<order>;};
+  //  hash_table["north+butterworth"] = [](int order){ return  dps::Butterworth::BandStop<order>;
+
+  hash_table["lowpass+chebyshevI"] = [](int order){ return  dps::ChebyshevI::LowPass<order>;};
+  hash_table["highpass+chebyshevI"] = [](int order){ return  dps::ChebyshevI::HighPass<order>;};
+  hash_table["bandpass+chebyshevI"] = [](int order){ return  dps::ChebyshevI::BandPass<order>;};
+  hash_table["bandstop+chebyshevI"] = [](int order){ return  dps::ChebyshevI::BandStop<order>;};
+  //  hash_table["north+chebyshevI"] = [](int order){ return  dps::ChebyshevI::BandStop<order>;
+
+  hash_table["lowpass+chebyshevII"] = [](int order){ return  dps::ChebyshevII::LowPass<order>;};
+  hash_table["highpass+chebyshevII"] = [](int order){ return dps::ChebyshevII::HighPass<order>;};
+  hash_table["bandpass+chebyshevII"] = [](int order){ return dps::ChebyshevII::BandPass<order>;};
+  hash_table["bandstop+chebyshevII"] = [](int order){ return  dps::ChebyshevII::BandStop<order>;};
+  //  hash_table["north+chebyshevII"] = [](int order){ return  dps::ChebyshevII::BandStop<order>;};
+
+  hash_table["lowpass+elliptic"] = [](int order){ return  dps::ChebyshevI::LowPass<order>;};
+  hash_table["highpass+elliptic"] = [](int order){ return dps::ChebyshevI::HighPass<order>;};
+  hash_table["bandpass+elliptic"] = [](int order){ return dps::ChebyshevI::BandPass<order>;};
+  hash_table["bandstop+elliptic"] = [](int order){ return dps::ChebyshevI::BandStop<order>;};
+  //  hash_table["north+elliptic"] = [](int order){ return  dps::ChebyshevI::BandStop<order>;};
+
+  hash_table["lowpass+bessel"] = [](int order){ return  dps::Bessel::LowPass<order>;};
+  hash_table["highpass+bessel"] = [](int order){ return  dps::Bessel::HighPass<order>;};
+  hash_table["bandpass+bessel"] = [](int order){ return  dps::Bessel::BandPass<order>;};
+  hash_table["bandstop+bessel"] = [](int order){ return  dps::Bessel::BandStop<order>;}; 
+  //  hash_table["north+bessel"] = [](int order){ return  dps::Bessel::BandStop<order>;
+
+  hash_table["lowpass+rbj"]  = dps::RBJ::LowPass;
+  hash_table["highpass+rbj"] = dps::RBJ::HighPass;
+  hash_table["bandpass+rbj"] = dps::RBJ::BandPass;
+  hash_table["bandstop+rbj"] = dps::RBJ::BandStop;
+  //  hash_table["north+rbj"] = dps::RBJ::BandStop;
+}

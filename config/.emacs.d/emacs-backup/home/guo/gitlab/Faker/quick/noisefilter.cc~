@@ -1,0 +1,41 @@
+
+#include <algorithm>
+#include <numeric>
+#include "filter.h"
+#include "classifier.h"
+#include "noisefilter.h"
+#include "boost/circular_buffer.hpp"
+
+/*
+template <class T>
+using Buffer = boost::circular_buffer<T>;
+*/
+
+float NoiseFilter::filter(float sample) {
+  raw_signal.push_back(sample);
+  float avg = mean_filter.filter(sample);
+  avg_signal.push_back(avg);
+  int flag = classifier.classify(sample);
+  flags.push_back(flag);
+  
+  // start stage
+  if (!raw_signal.full()) {
+    float sum = std::accumulate(raw_signal.begin(), raw_signal.end(), 0);
+    return sum / raw_signal.size();
+  }
+
+  bool is_use = std::accumulate(flags.begin(), flags.end(), 0) == 0;
+  
+  if (is_use) {
+    return sample;
+  }
+  
+  return avg_signal[0];
+}
+
+
+
+
+
+
+

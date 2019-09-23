@@ -1,0 +1,32 @@
+
+import pdb
+import tensorflow as tf
+
+
+class CustomModule(tf.Module):
+
+    def __init__(self):
+        super(CustomModule, self).__init__()
+        self.v = tf.Variable(1.)
+
+    @tf.function
+    def __call__(self, x):
+        return x * self.v
+
+    @tf.function(input_signature=[tf.TensorSpec([], tf.float32)])
+    def mutate(self, new_v):
+        self.v.assign(new_v)
+
+module = CustomModule()
+
+
+if __name__ == '__main__':
+    print(module(3))
+    module(tf.constant(1.))
+    call = module.__call__.get_concrete_function(tf.TensorSpec(None, tf.float32))
+    tf.saved_model.save(module, "saved_models", signatures=call)
+
+    imported = tf.saved_model.load("saved_models")
+    #pdb.set_trace()
+    imported.mutate(tf.constant(2.0))
+    print(imported(3))

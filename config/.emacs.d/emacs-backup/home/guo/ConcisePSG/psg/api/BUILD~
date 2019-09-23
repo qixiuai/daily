@@ -1,0 +1,23 @@
+
+cc_library(
+    name = "api",
+    srcs = ["api.cc"],
+    hdrs = ["api.h"],
+    copts = ["-std=c++17"],
+    linkopts = ["-lpthread","-lcrypto", "-lssl", "-lboost_system", "-lcpprest"],
+    deps = ["@com_google_absl//absl/strings"],
+)
+
+cc_test(
+    name = "api_test",
+    size = "small",
+    srcs = ["api_test.cc",],
+    copts = ["-std=c++17", "-Iexternal/gtest/include"],
+    linkopts = ["-pthread"],
+    deps = [":api", "@com_google_absl//absl/strings", "@gtest//:gtest"],
+)
+
+
+
+
+

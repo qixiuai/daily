@@ -1,0 +1,108 @@
+
+#include <fstream>
+#include <memory>
+#include <utility>
+#include <vector>
+#include <string>
+
+#include "absl/strings/string_view.h"
+#include "tensorflow/cc/ops/const_op.h"
+#include "tensorflow/cc/ops/standard_ops.h"
+#include "tensorflow/core/framework/graph.pb.h"
+#include "tensorflow/core/framework/tensor.h"
+#include "tensorflow/core/graph/default_device.h"
+#include "tensorflow/core/graph/graph_def_builder.h"
+#include "tensorflow/core/lib/core/errors.h"
+#include "tensorflow/core/lib/core/threadpool.h"
+#include "tensorflow/core/lib/io/path.h"
+#include "tensorflow/core/lib/strings/str_util.h"
+#include "tensorflow/core/lib/strings/stringprintf.h"
+#include "tensorflow/core/platform/env.h"
+#include "tensorflow/core/platform/init_main.h"
+#include "tensorflow/core/platform/logging.h"
+#include "tensorflow/core/platform/types.h"
+#include "tensorflow/core/public/session.h"
+
+using tensorflow::Tensor;
+using tensorflow::Status;
+using tensorflow::int32;
+
+using namespace std;
+
+Status LoadGraph(const string& graph_file_name,
+		 std::unique_ptr<tensorflow::Session>* session) {
+  tensorflow::GraphDef graph_def;
+  Status load_graph_status =
+    ReadBinaryProto(tensorflow::Env::Default(), graph_file_name, &graph_def);
+  if (!load_graph_status.ok()) {
+    return tensorflow::errors::NotFound("Failed to load compute graph at '", graph_file_name, "'");
+  }
+  session->reset(tensorflow::NewSession(tensorflow::SessionOptions()));
+  Status session_create_status = (*session)->Create(graph_def);
+  if (!session_create_status.ok()) {
+    return session_create_status;
+  }
+  return Status::OK();
+}
+
+Status ReadEntireFile(tensorflow::Env* env, const string& filename,
+		      Tensor* output) {
+  tensorflow::uint64 file_size = 0;
+  TF_RETURN_IF_ERROR(env->GetFileSize(filename, &file_size));
+
+  string contents;
+  contents.resize(file_size);
+
+  std::unique_ptr<tensorflow::RandomAccessFile> file;
+  TF_RETURN_IF_ERROR(env->NewRandomAccessFile(filename, &file));
+  
+  absl::string_view data;
+  TF_RETURN_IF_ERROR(file->Read(0, file_size, &data, &(contents)[0]));
+  if (data.size() != file_size) {
+    return tensorflow::errors::DataLoss("Truncated read of '", filename,
+					"' expected ", file_size, " got ",
+					data.size());
+  }
+  output->scalar<string>()() = string(data);
+  
+  return Status::OK();
+}
+
+Status ReadTensorFromCSVFile(string csv_path, std::vector<Tensor>* input) {
+  return Status::OK();
+}
+
+int main(int argc, char* argv[]) {
+  tensorflow::port::InitMain(argv[0], &argc, &argv);
+  LOG(INFO) << "Hello, Started!";  
+  string root_dir = "/home/guo/Github/tensorflow/tensorflow/cc/example";
+  
+  std::unique_ptr<tensorflow::Session> session;
+  string graph_path = "/home/guo/AwareCore/SleepStage/tensorflow/ckpts";
+  Status load_graph_status = LoadGraph(graph_path, &session);
+  if (!load_graph_status.ok()) {
+    LOG(ERROR) << load_graph_status;
+    return -1;
+  }
+  
+  Tensor x(tensorflow::DT_FLOAT, tensorflow::TensorShape({1, 32, 32, 2}));
+  Eigen::Tensor<float, 4, Eigen::RowMajor> data(1, 32, 32, 2);
+  data.setRandom();
+  auto dims = data.dimensions();
+  auto size = dims.size();
+  cout << data.size() << data.dimensions().size();
+  
+  //  string s = "123";
+  //  x.scalar<string>()() = string(data.data());
+  /*
+  string data_path = "data/A.txt";
+  string csv_path  = tensorflow::io::JoinPath(root_dir, data_path);
+  Status read_tensor_status = ReadTensorFromCSVFile(csv_path, &resized_tensors);
+  if (!read_tensor_status.ok()) {
+    LOG(ERROR) << read_tensor_status;
+    return -1;
+  }
+  */
+  LOG(INFO) << "Hello, Finished!";  
+  return 0;
+}

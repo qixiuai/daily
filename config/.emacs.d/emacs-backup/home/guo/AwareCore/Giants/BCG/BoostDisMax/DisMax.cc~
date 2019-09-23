@@ -1,0 +1,103 @@
+
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <boost/circular_buffer.hpp>
+
+#include <chrono>
+#include <thread>
+
+struct Config {
+  int Fz;  
+  int window_size;
+  int max_window_size;
+  int min_window_size;
+  int sample_index;
+};
+
+class DisMax {
+public:
+  typedef typename boost::circular_buffer<int>    Signal;
+  typedef typename boost::circular_buffer<double> MovAvg;
+  typedef typename boost::circular_buffer<double> MovDev;  
+  typedef typename boost::circular_buffer<double> MovMax;
+  typedef typename boost::circular_buffer<int>    MovDur;
+  typedef int PeakOffset;
+  
+  DisMax()  = default;
+  ~DisMax() = default;
+  explicit DisMax(const Config& config);
+  PeakOffset run(int x); // int is Signal Data
+  
+private:
+  Config __config_;
+
+  Signal __signal_;
+  MovAvg __movavg_;
+  MovDev __movdev_;
+  MovMax __movmax_;
+  MovDur __movdur_;
+  
+  int __last_peak_;
+  int __last_period_;
+  int __sample_index_;
+};
+
+DisMax::DisMax(const Config& __config) {
+  int __buf_sz    = __config.max_window_size;  
+  this->__config_ = __config;  
+
+  this->__signal_ = Signal(__buf_sz);
+  this->__movavg_ = MovAvg(__buf_sz);
+  this->__movdev_ = MovDev(__buf_sz);
+  this->__movmax_ = MovMax(__buf_sz);
+  this->__movdev_ = MovDev(__buf_sz);
+  
+  this->__last_peak_    = 0;
+  this->__last_period_  = 0;
+  this->__sample_index_ = 0;
+}
+
+DisMax::PeakOffset DisMax::run(int x) {
+  __sample_index_ += 1;
+  __signal_.push_back(x);
+  if (__signal_.full()) {
+    //    std::cout << "Signal Full" << std::endl;
+    //    exit(0);
+  }
+
+  //  std::this_thread::sleep_for(std::chrono::seconds(1));
+  
+  return __sample_index_;
+}
+
+
+int main() {
+  std::string data_dir  = "/home/guo/AwareCore/Giants/data/";
+  std::string test_data = data_dir + "Test.txt";
+  
+  std::ifstream data_stream(test_data);
+
+  if (!data_stream.is_open())
+    throw std::invalid_argument("Data file not found");
+  
+  Config config;
+  int Fz = 100;
+  config.Fz = Fz;
+  config.window_size = 0.3*Fz;
+  config.max_window_size = 0.5*Fz;
+  config.min_window_size = 0.3*Fz;
+  
+  DisMax dismax(config);
+
+  int val;
+  while (true) {
+    data_stream >> val;
+    if (data_stream.eof())
+      break;
+    std::cout << dismax.run(val) << '\t' << val  << '\n';
+  }
+      
+  return 0;
+}

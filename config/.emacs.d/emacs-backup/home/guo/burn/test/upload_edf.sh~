@@ -1,0 +1,7 @@
+#!/bin/env bash
+
+HOST=http://localhost:8000
+#HOST=http://192.168.17.129:8000
+# put edfdata
+#
+curl -X PUT -H "Content-Type: application/octet-stream"  -T "/home/guo/data/psg/physio/psg_test.edf"  ${HOST}

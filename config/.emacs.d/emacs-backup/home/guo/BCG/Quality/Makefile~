@@ -1,0 +1,6 @@
+Q : Quality.cc
+	clang++ $< -std=c++17 -stdlib=libc++ -I/home/guo/Github/glog/bazel-out/k8-fastbuild/bin/_virtual_includes/glog -L/home/guo/Github/llvm_svn/build/lib -L/home/guo/Github/glog/bazel-out/k8-fastbuild/bin  -g -o $@
+	./Q
+learn: learn.cc
+	clang++ $< -std=c++17 -stdlib=libc++ -I/home/guo/Github/glog/bazel-out/k8-fastbuild/bin/_virtual_includes/glog -L/home/guo/Github/llvm_svn/build/lib -L/home/guo/Github/glog/bazel-out/k8-fastbuild/bin  -g -o $@
+	./Q

@@ -1,0 +1,29 @@
+from scipy.io import loadmat
+
+from filter_zi import *
+
+bm  = loadmat("b.mat")["b"]
+am  = loadmat("a.mat")["a"]
+xm  = loadmat("x.mat")["x"]
+zim = loadmat("zi.mat")["zi"]
+
+bm  = bm[:,0]
+am  = am[:,0]
+xm  = xm[:,0]
+zim = zim[:,0]
+
+print(bm)
+print(am)
+print(xm)
+print(zim)
+
+bm = FloatVector(bm.tolist())
+am = FloatVector(am.tolist())
+xm = FloatVector(xm.tolist())
+zim = FloatVector(zim.tolist())
+
+#out = FloatVector([0 for i in range(xm.size())])
+
+#float_filter(out, bm, am, xm, zim)
+print(out)
+

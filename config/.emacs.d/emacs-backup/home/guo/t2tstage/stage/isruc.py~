@@ -1,0 +1,77 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import random
+import numpy as np
+import pandas as pd
+
+from glob import glob
+from scipy.io import loadmat
+
+from tensor2tensor.utils import registry
+from tensor2tensor.layers import modalities
+from tensor2tensor.data_generators import problem
+from tensor2tensor.data_generators import generator_utils
+
+from stage.stage_utils import StageProblem
+
+import tensorflow as tf
+
+_ISRUC_DIR = "/home/guo/data/sleepstage/database/ISRUC_Sleep/"
+_MAT_DIR = _ISRUC_DIR + "ExtractedChannels/subgroupI-Extractedchannels/"
+_TXT_DIR = _ISRUC_DIR + "subgroupI/"
+mat_files = glob(_MAT_DIR + "/*.mat")
+random.seed(2018)
+random.shuffle(mat_files)
+
+@registry.register_problem
+class StageIsruc(StageProblem):
+
+    @property
+    def num_signals(self):
+        return 2
+
+    def encode(self, lb):
+        one_hot = [0] * self.num_stages
+        idx = int(lb)
+        if idx == 5:
+            idx = 4
+        one_hot[idx] = 1
+        return one_hot
+    
+    def generate_samples(self, data_dir, tmp_dir, dataset_split):
+        train_files = mat_files[:10]
+        dev_files   = mat_files[70:75]
+        test_files  = mat_files[90:91]
+        if dataset_split == problem.DatasetSplit.TRAIN:
+            files = train_files
+        elif dataset_split == problem.DatasetSplit.EVAL:
+            files = dev_files
+        elif dataset_split == problem.DatasetSplit.TEST:
+            files = test_files
+        X = []
+        y = []
+        for file in files:
+            # X1 is chin EMG
+            #signal_names = [ "C4_A1", "C3_A2", "ROC_A1", "LOC_A2", "X1"]
+            signal_names = [ "C4_A1", "C3_A2"]
+            data = loadmat(file, variable_names=signal_names)
+            n_epochs = data[signal_names[0]].shape[0]
+            signals = [data[name] for name in signal_names]
+            X_batch = np.stack(signals, axis=2)
+            for i in range(n_epochs):
+                X.append(X_batch[i])
+            file = os.path.basename(file)
+            file_id = file[7:-4]
+            label_file = _TXT_DIR + file_id + "/" + file_id + "_1.txt"
+            labels = np.loadtxt(label_file)
+            y.extend(labels[:-30].tolist())
+        width, height = X[0].shape
+        for (epoch, label) in zip(X, y):
+            yield {
+                "inputs": epoch.flatten().tolist(),
+                "targets": self.encode(label),
+            }
+

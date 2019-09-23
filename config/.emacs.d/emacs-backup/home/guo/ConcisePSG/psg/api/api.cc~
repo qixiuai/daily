@@ -1,0 +1,105 @@
+
+#include <unordered_map>
+#include <vector>
+#include <string>
+
+#include <cpprest/json.h>
+#include "absl/strings/str_join.h"
+
+#include "psg/api/api.h"
+
+namespace psg {
+  namespace api {
+    
+    typedef std::vector<std::string> NamesType;
+
+    struct Names {
+      NamesType rows;
+      NamesType cols;
+      NamesType keys;
+      Names() = default;
+      Names(NamesType row_names, NamesType col_names) {
+	this->rows = row_names;
+	this->cols = col_names;
+	for (auto row_name : row_names) {
+	  for (auto col_name : col_names) {
+	    keys.push_back(absl::StrJoin(row_name, "_", col_name));
+	  }
+	}
+      }
+      Names(NamesType keys) {
+	this->keys = keys;
+      }
+    };
+  
+    Names stage({"WK(TIB)", "REM", "N1", "N2", "N3", "SleepEfficency", "SleepOnset"},
+		{"LastingTime", "TimeInBedRatio", "TotalSleepTatio", "Latency",
+		 "FromCloseLight", "FromSleepOnset"});
+  
+    Names spo2({"LowestTIB", "LowestTST", "MeanTIB", "MeanREM", "MeanNREM",
+	  "LowestRespRelated", "NOD", "ODI"}, {"Wake", "REM", "NREM", "Total"});
+  
+    Names resp({"AHI", "ReraIndex", "AI", "HI", "RDI", "DurOfLongestApnea", "Apnea",
+	  "OA", "CA", "MA", "Hypopnea"}, {"TimesHappenedTotal", "TimesHappenedRem",
+	  "TimesHappenedNREM", "LongestDur", "MeanDur"});
+
+    Names body_pos({"S", "L", "R", "P", "U"}, {"Duration", "CA", "MA", "OA", "Hyp",
+	  "AHI", "Rera", "RDI", "Desat"});
+
+    Names heart({"MeanHRNEM", "MeanHR", "MaxHR", "MinHR"});
+  
+    Names leg({"NumPlm", "NumPlmWake", "PlmIndex", "PlmWakeIndex"});
+  
+    typedef std::unordered_map<std::string, std::vector<float>> CharData;
+
+    Api::Api() {
+      // report: add single key - value pair
+      std::vector<std::string> keys;
+      auto append_keys = [&](Names names) {
+	keys.insert(keys.end(), names.keys.begin(), names.keys.end());
+      };
+      append_keys(stage);
+      append_keys(spo2);
+      append_keys(resp);
+      append_keys(body_pos);
+      append_keys(heart);
+      for (auto key : keys) {
+	db[key] = 2018;
+      }
+      // report: CharData
+      // hr --> json::array([json::value(min, max)...]) sizeof() = num_epoch
+      int num_epoch = 300;
+            
+      // events
+      // event key
+      // add event data
+      // add char data
+    }
+
+    
+    static web::json::value Api::get(const web::json::value& client) {
+	web::json::value ret;
+	for (auto iter = client.begin(); iter != client.end(); iter++) {
+	  auto key = iter->first;
+	  ret[key] = db[key];
+	}
+	return ret;
+      }
+
+    static void Api::post(const web::json::value& client) {
+	for (auto iter = client.begin(); iter != client.end(); iter++) {
+	  auto key = iter->first;
+	  auto val = iter->second;
+	  db[key] = val;
+	}
+    }    
+    
+  };
+    
+  struct Event {
+    int start; // index
+    int end;
+    std::string name; // stage: N1/N2/N3/Wake/REM // spo2 deduction
+  };
+
+} // end namespace psg

@@ -1,0 +1,17 @@
+#include <iostream>
+#include <cstdlib>
+
+#include "boost/circular_buffer.hpp"
+
+using namespace std;
+
+int main() {
+
+  auto ret = div(1,2);
+  cout << ret.rem  << endl;
+  cout << ret.quot << endl;
+  auto buf = boost::circular_buffer<int>(0);
+  buf.push_back(1);
+  
+  return 0;
+}

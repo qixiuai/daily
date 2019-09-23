@@ -1,0 +1,15 @@
+
+#include <iostream>
+#include <vector>
+#include <string>
+
+#include "absl/strings/str_split.h"
+
+
+
+int main() {
+  std::vector<std::string> v1 = absl::StrSplit("a, b, c", absl::ByString(",  "));
+
+  std::cout << v1.size() << '\n';
+  return 0;
+}

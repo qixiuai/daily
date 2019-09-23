@@ -1,0 +1,66 @@
+
+""" produce dataset from physiochallengle2018 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import physionetchallenge2018_lib as phyc_lib
+
+from glob import glob
+
+from sklearn.model_selection import train_test_split
+
+import pdb
+
+
+class PhysioChallengeDataset(object):
+
+    def __init__(self, is_train=True, is_debug=True):
+        self.data_dir = "/home/guo/Flake/arousal/data/"
+        self.is_train = is_train
+        self.is_debug = is_debug
+
+    def generate_dataset(self):
+        train_files_df, test_files_df = phyc_lib.get_files()
+        files_df = train_files_df
+        if self.is_train:
+            files_df = files_df
+        else:
+            files_df = files_df
+
+        i = 0
+        def serialize_example(df):
+            pass
+            
+        for index, row in files_df.iterrows():
+            basename = os.path.basename(row['signal'])[:-4]
+            tfrecords_path = self.data_dir + basename + ".tfrecords"
+            writer = tf.data.experimental.TFRecordWriter(tfrecords_path)
+            header_file, arousal_file, signal_file, is_traing = row
+            signal_names, Fs, n_samples = phyc_lib.import_signal_names(header_file)
+            signal_names = list(np.append(signal_names, 'arousals'))
+            df = phyc_lib.get_subject_data(arousal_file, signal_file, signal_names)
+            column_names = ['F3-M2', 'F4-M1', 'C3-M2', 'C4-M1', 'O1-M2', 'O2-M1', 'E1-M2',
+                            'Chin1-Chin2']
+            data = df[column_names]
+            labels = df['arousals']
+            data, labels = np.array(data), np.array(labels)
+            dataset = tf.data.Dataset.from_tensor_slices((data, labels))
+            writer.write(dataset)
+            if i > 10:
+                break
+            i += 1
+
+    def __call__(self):
+        # load tfrecords and produce example
+        pass
+
+
+if __name__ == "__main__":
+    phyc_dataset = PhysioChallengeDataset(is_train=True)
+    phyc_dataset.generate_dataset()

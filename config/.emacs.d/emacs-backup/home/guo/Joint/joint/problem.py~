@@ -1,0 +1,22 @@
+
+
+from tensor2tensor.utils import hparams
+from tensor2tensor.utils import metrics
+
+import tensorflow as tf
+
+
+class DatasetSplit(object):
+    TRAIN = tf.estimator.ModeKeys.TRAIN
+    EVAL = tf.estimator.ModeKeys.EVAL
+    TEST = "test"
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,9 @@
+
+exports_files(["stage_model/saved_models"])
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+

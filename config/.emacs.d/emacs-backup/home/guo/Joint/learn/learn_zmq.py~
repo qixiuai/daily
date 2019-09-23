@@ -1,0 +1,23 @@
+
+import zmq
+import time
+import pickle
+import numpy as np
+
+context = zmq.Context()
+socket = context.socket(zmq.REP)
+socket.bind("ipc://DataServer")
+
+
+while True:
+    message = socket.recv()
+    print("get message: {}".format(message))
+    x = np.random.randn(2,2)
+    data = pickle.dumps(x)
+    print("send data: {}".format(x))
+    socket.send(data)
+
+
+
+
+

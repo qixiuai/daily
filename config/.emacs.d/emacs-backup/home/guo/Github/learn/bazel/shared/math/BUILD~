@@ -1,0 +1,12 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+cc_import(
+    name = "math",
+    hdrs = ["math.h"],
+    includes = ["."],
+    shared_library = "libmath.so",
+)

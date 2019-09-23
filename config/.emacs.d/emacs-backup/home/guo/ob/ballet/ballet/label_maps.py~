@@ -1,0 +1,39 @@
+
+import pandas as pd
+from object_detection.utils import label_map_util
+import pdb
+
+
+class KaggleLabelMap(object):
+
+    def __init__(self):
+        self.kaggle_label_map = self._load_kaggle_label()
+        self.category_index = self._load_label_map()
+
+    def _load_kaggle_label(self):
+        data_dir = "/home/guo/data/kaggle/OpenImage2019/"
+        df = pd.read_csv(data_dir+"challenge-2019-classes-description-500.csv",header=None)
+        label_name_to_bytes = {}
+        for _, (byte, name) in df.iterrows():
+            label_name_to_bytes[name] = byte
+        label_name_to_bytes['Studio couch'] = label_name_to_bytes['studio couch']
+        return label_name_to_bytes
+        
+    def _load_label_map(self):
+        tf_model_dir = "/home/guo/Github/tensorflow_models/research/object_detection/"
+        LABEL_MAP_PATH = tf_model_dir + "data/oid_v4_label_map.pbtxt"
+        category_index = label_map_util.create_category_index_from_labelmap(LABEL_MAP_PATH, use_display_name=True)
+        return category_index
+    
+    def category_index_to_kaggle_label(self, index):
+        category_name = self.category_index[index]
+        return self.kaggle_label_map.get(category_name, None)
+
+    
+
+
+
+
+
+
+

@@ -1,0 +1,32 @@
+#ifndef _TF_STAGE_MODEL_
+#define _TF_STAGE_MODEL_
+
+#include <cstring>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <memory>
+
+#include "tensorflow/c/c_api.h"
+
+using Vec = std::vector<float>;
+using Array = std::vector<Vec>;
+
+class TFStageModel {
+public:
+  TFStageModel();
+  //  TFStageModel(const std::string export_dir);
+  
+  int predict(float* X, int nbytes);
+  
+private:
+  void _load_exported_model(const std::string export_dir);
+  
+  std::string export_dir;
+  
+  TF_Graph* graph;
+  //TF_Buffer* meta_graph;
+  TF_Session* session;
+};
+
+#endif

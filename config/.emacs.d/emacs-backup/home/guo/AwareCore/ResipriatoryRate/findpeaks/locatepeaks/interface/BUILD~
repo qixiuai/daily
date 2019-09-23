@@ -1,0 +1,6 @@
+cc_library(
+    name = "interface",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    visibility = ["//locatepeaks:__subpackages__"],
+)

@@ -1,0 +1,155 @@
+
+#include "psg/lib/findpeaks/findpeaks.h"
+
+#include <algorithm>
+#include <map>
+#include <thread>
+#include <vector>
+
+namespace psg {
+  namespace lib {
+    namespace findpeaks {
+
+      class _FindPeaks {
+      public:
+	_FindPeaks(const std::vector<float>* signal,
+		   int start, int end,
+		   int min_dist, float thres, int period) {
+	  this->signal = signal;
+	  this->start = start;
+	  this->end = end;
+	  this->min_dist = min_dist;
+	  this->thres = thres;
+	  this->period = period;
+	}
+	void operator() () {
+	  // set threshold
+	  float max = *std::max_element(signal->begin() + start, signal->begin() + end);
+	  float min = *std::min_element(signal->begin() + start, signal->begin() + end);
+	  float threshold = thres * (max - min) + min;
+	  
+	  // set new start and end
+	  int start_extend = std::max(0, start - this->period);
+	  int end_extrend = std::min(end + this->period, static_cast<int>(signal->size()));
+
+	  // get extrema
+	  std::vector<int> extrema;
+	  for (int ind = start_extend + 1; ind < end_extrend - 1; ind++) {
+	    float left = (*signal)[ind-1];
+	    float mid = (*signal)[ind];
+	    float right = (*signal)[ind+1];
+	    if (mid >= threshold and mid >= left and mid <= right)
+	      extrema.push_back(ind);
+	  }
+	  
+	  if (extrema.empty() or min_dist <= 1) {
+	    indices = extrema;
+	    return;
+	  }
+	  // get extrema indices sorted by extrema val
+	  std::vector<int> extrema_val_sorted(extrema.begin(), extrema.end());
+	  std::sort(extrema_val_sorted.begin(),
+		    extrema_val_sorted.end(),
+		    [this](int ind1, int ind2){
+		      return (*this->signal)[ind1] > (*this->signal)[ind2];
+		    });
+	  
+	  // get extrema masks
+	  std::map<int, bool> mask_extrema;
+	  int num_extrema = extrema.size();
+	  for (int i = 0; i < num_extrema; i++) {
+	    int extremum = extrema[i];
+	    mask_extrema[extremum] = false;
+	  }
+	  for (auto high_val_extrema_index : extrema_val_sorted) {
+	    if (mask_extrema[high_val_extrema_index]) continue;
+	    auto lower_bound = high_val_extrema_index - min_dist;
+	    auto upper_bound = high_val_extrema_index + min_dist;
+	    for (int i = 0; i < num_extrema; i++) {
+	      auto extremum_index = extrema[i];
+	      if (extremum_index < lower_bound) continue;
+	      if (extremum_index > upper_bound) break; // extrema is sorted
+	      mask_extrema[extremum_index] = true;
+	    }
+	    mask_extrema[high_val_extrema_index] = false;
+	  }
+
+	  // get remaining extrema
+	  for (int i = 0; i < num_extrema; i++) {
+	    auto index = extrema[i];
+	    if (index < start or index >= end) continue;
+	    if (mask_extrema[index]) continue;
+	    indices.push_back(index);
+	  }
+	}
+	const std::vector<float>* signal;
+	int min_dist;
+	int period;
+	float thres;
+	int start;
+	int end;
+	std::vector<int> indices;
+	std::vector<float> values;
+      };
+
+      class FindPeaks {
+      public:
+	FindPeaks(const std::vector<float>* signal,int period,
+		  int min_dist, float thres) :
+	  signal{signal}, period{period}, min_dist{min_dist}, thres{thres} {}
+	//FindPeaks(const std::vector<int>* signal) : signal{signal} {}
+	void operator() () {
+	  std::vector<_FindPeaks> raw_task_pool; // mv to class member
+	  int step = period * 2; // # 60 - 120 40 - 120  30 - 120
+	  int data_len = signal->size();
+	  int start = 0;
+	  int end = 0;
+	  for (int i = 0; i < data_len; i++) {
+	    start = end;
+	    end = start + step;	    
+	    raw_task_pool.push_back(_FindPeaks(signal, start, end, min_dist, thres, period));
+	  }
+	
+	  std::vector<std::thread> thread_pool;
+	  int num_threads = std::thread::hardware_concurrency();
+	  int block_size = raw_task_pool.size() / num_threads + 1;
+	  for (int tid = 0; tid < num_threads; tid++) {
+	    auto thread_task = [&raw_task_pool, block_size, tid](){
+	      int offset = tid * block_size;
+	      for (int i = 0; i < block_size; i++) {
+		int task_id = i + offset;
+		auto task = raw_task_pool[task_id];
+		task();
+	      }
+	    };
+	    thread_pool.push_back(std::thread(thread_task));
+	  }
+	  for (auto& thread : thread_pool) {
+	    thread.join();
+	  }
+	  std::vector<int> indices;
+	  for (auto task : raw_task_pool) {
+	    for (auto index : task.indices) {
+	      indices.push_back(index);
+	    }
+	  }
+	  return;
+	}
+	const std::vector<float>* signal;
+	int period;
+	int min_dist;
+	float thres;
+	std::vector<int> indices;
+	std::vector<float> values;
+      };
+	
+      std::vector<int> findpeaks(const std::vector<float>* signal, int min_dist, float thres, int period) {
+	auto findpeaks_func = FindPeaks(signal, min_dist, thres, period);
+	findpeaks_func();
+	return findpeaks_func.indices;
+      }
+      
+    } // end namespace peaks
+  }  // end namespace lib
+} // end namespace psg
+

@@ -1,0 +1,34 @@
+
+from mne import Epochs, pick_types
+from mne.io import concatenate_raws, read_raw_edf
+
+import grpc
+
+import psg_pb2
+import psg_pb2_grpc
+
+from absl import app
+from absl import logging
+
+import pdb
+
+def load_edf():
+    edf_path = "/home/guo/PSG/data/A2-PSG_1811142338.edf"
+    with open(edf_path, "rb") as file:
+        raw = file.read()
+    block_size = 1024 * 1024
+    file_size = len(raw)
+    for i in range(0, file_size-block_size + 1, block_size):
+        yield psg_pb2.EdfRequest(data=raw[i:i+block_size])
+        
+
+def main(unused):
+    del unused
+    with grpc.insecure_channel('localhost:6066') as channel:
+        stub = psg_pb2_grpc.PSGServiceStub(channel)
+        requests = load_edf()
+        response = stub.EdfAnalysis(requests)
+        logging.info("Get response from server: " + response.example)
+
+if __name__ == '__main__':
+    app.run(main)

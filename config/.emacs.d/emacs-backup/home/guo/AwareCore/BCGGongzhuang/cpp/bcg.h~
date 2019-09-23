@@ -1,0 +1,57 @@
+#ifndef _BCG_
+#define _BCG_
+
+#include <string>
+#include <vector>
+#include "filter.h"
+#include "findpeaks.h"
+
+struct BCGResult {
+  int   is_on_bed;    
+  int   quality_level;
+  int   heart_rate;
+  int   heart_offset;
+  int   respiratory_rate;
+  int   respiratory_offset;
+  BCGResult() {
+    this->is_on_bed          = 1;
+    this->quality_level      = 2;
+    this->heart_rate         = 0;
+    this->heart_offset       = -1;
+    this->respiratory_rate   = 0;
+    this->respiratory_offset = -1;
+  }
+};
+
+class BCGFramework {
+public:
+  Filter<double> lowpass;
+  Filter<double> highpass;
+  MedianFilter<double> medfilter_low;
+  MedianFilter<double> medfilter_high;
+  
+  PeakDetector resp_detector;
+  PeakDetector heart_detector;
+  
+  //  BCGFramework() {}
+ 
+  BCGFramework() {
+    std::string data_dir = "/home/guo/AwareCore/BCGGongzhuang/cpp/coeffs/";
+    std::string lowpass_a = data_dir + "lowpass_a.csv";
+    std::string lowpass_b = data_dir + "lowpass_b.csv";
+    std::string highpass_a = data_dir + "highpass_a.csv";
+    std::string highpass_b = data_dir + "highpass_b.csv";
+    this->lowpass   = Filter<double>(lowpass_b,  lowpass_a);
+    this->highpass  = Filter<double>(highpass_b, highpass_a);
+    this->medfilter_low = MedianFilter<double>(101);
+    this->medfilter_high = MedianFilter<double>(31);
+    this->resp_detector  = PeakDetector(1000, 25*1000, 1*1000, 0.85, 1500, 16);
+    this->heart_detector = PeakDetector(1000, 20*1000, 1*1000, 0.70, 400, 21);
+  }
+  BCGResult run(int value);
+};
+
+
+#endif
+
+

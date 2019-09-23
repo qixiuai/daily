@@ -1,0 +1,36 @@
+# signal service:
+#              1. tcp server to receive tcp packets from hardware
+#              2. signal client to seed data to alg server
+
+
+from concurrent import futures
+import time
+
+import grpc
+
+import BCG_pb2
+import BCG_pb2_grpc
+
+
+class SignalServier(BCG_pb2_grpc.BCGAlgCommServicer):
+    def __init__(self):
+        self.signal_pool = [1,2,3] # For test usage
+
+    def GetSignal(self, request, context):
+        print("Get request from %s\n", request.clientname) # TODO
+        for signal in signal_pool:
+            yield signal
+
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    BCG_pb2_grpc.add_BCGServicer_to_server(SignalServicer(), server)
+    server.add_insecure_port("192.168.4.3:50051")
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        server.stop(0)
+
+if __name__ == '__main__':
+    serve()
+

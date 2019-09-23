@@ -1,0 +1,83 @@
+""" deepsleepnet: https://github.com/akaraspt/deepsleepnet """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from absl import app
+from absl import flags
+from absl import logging
+
+import tensorflow.keras as keras
+import tensorflow as tf
+
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import Input, Dense, Conv1D, MaxPooling1D
+from tensorflow.keras.layers import Flatten, Dropout, BatchNormalization
+from tensorflow.keras.layers import Concatenate
+
+import pdb
+
+
+def conv1d_bn(inputs, filters=None, kernel_size=None, strides=1, activation="relu"):
+        x = Conv1D(filters=filters,
+                   kernel_size=kernel_size,
+                   strides=strides,
+                   padding="same",
+                   activation=activation)(inputs)
+        x = BatchNormalization()(x)
+        return x
+
+
+def slow_wave_block(inputs):
+    x = conv1d_bn(inputs, filters=64, kernel_size=400, strides=50)
+    x = MaxPooling1D(pool_size=4, strides=4,padding="same")(x)
+    x = Dropout(0.5)(x)
+    x = conv1d_bn(x, filters=128, kernel_size=6, strides=1)
+    x = conv1d_bn(x, filters=128, kernel_size=6, strides=1)
+    x = conv1d_bn(x, filters=128, kernel_size=6, strides=1)
+    x = MaxPooling1D(pool_size=2, strides=2, padding="same")(x)
+    x = Flatten()(x)
+    return x
+
+
+def quick_wave_block(inputs): 
+    x = conv1d_bn(inputs, filters=64, kernel_size=50, strides=6)
+    x = MaxPooling1D(pool_size=8, strides=8)(x)
+    x = Dropout(0.5)(x)
+    x = conv1d_bn(x, filters=128, kernel_size=8, strides=1)
+    x = conv1d_bn(x, filters=128, kernel_size=8, strides=1)
+    x = conv1d_bn(x, filters=128, kernel_size=8, strides=1)
+    x = MaxPooling1D(pool_size=4, strides=4)(x)
+    x = Flatten()(x)
+    return x
+
+inputs = Input(shape=(3000,1))
+slow = slow_wave_block(inputs)
+quick = quick_wave_block(inputs)
+x = Concatenate(axis=1)([slow, quick])
+x = Dropout(0.5)(x)
+outputs = Dense(5, activation="softmax")(x)
+
+DeepFeatureNet = Model(inputs=inputs, outputs=outputs)
+
+
+
+class DeepFeatureNetDeprecated(Model):
+
+    def __init__(self):
+        super(DeepFeatureNet, self).__init__()
+        self.slow_wave_block = SlowWaveBlock()
+        self.quick_wave_block = QuickWaveBlock()
+        self.dropout = Dropout(0.5)
+        self.dense_softmax = Dense(5, activation="softmax")
+
+    def call(self, inputs):
+        slow = self.slow_wave_block(inputs)
+        quick = self.quick_wave_block(inputs)
+        x = tf.concat([slow, quick], axis=1)
+        x = self.dropout(x)
+        x = self.dense_softmax(x)
+        return x
+

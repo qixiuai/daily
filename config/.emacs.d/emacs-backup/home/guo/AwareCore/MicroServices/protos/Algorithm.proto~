@@ -1,0 +1,48 @@
+// grpc service for BCG Algorithm
+
+syntax = "proto3";
+
+package Physio;
+
+service BCGAlgSerice {
+  rpc GetBCGSummary(ClientName) returns (stream BCGSummary) {}
+}
+
+message ClientName {
+  string name = 1;
+}
+
+message BCGSummary {
+  ResultSummary  result_summary      = 1;
+  QualitySummary quality_summary     = 2;
+  DisMaxSummary  heart_summary       = 3;
+  DisMaxSummary  respiratory_summary = 4;
+}
+
+message ResultSummary {
+  int32 is_on_bed          = 1;
+  int32 quality_level      = 2;
+  int32 heart_rate         = 3;
+  int32 heart_offset       = 4;
+  int32 respiratory_rate   = 5;
+  int32 respiratory_offset = 6;
+}
+
+message QualitySummary {
+  int32 window_size = 1;
+  int32 h           = 2; // entropy value
+  int32 stddev      = 3; // stddev of entropy
+}
+
+message DisMaxSummary {
+  int32  signal           = 1;
+  int32  movavg           = 2;
+  int32  movmax           = 3;
+  int32  duration         = 4;
+  int32  is_peak          = 5;
+  int32  peak_offest      = 6;
+  int32  peaks_per_minute = 7;
+
+  int32  window_size      = 8;
+  int32  u                = 9;
+}

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package edfplus;
+
+option cc_enable_arenas = true;
+
+message Header {
+  optional Version version = 0;
+  optional PatientID patient_id = 1;
+  optional RecordingID recording_id = 2;
+  optional Date start_date = 3;
+  optional Time start_time = 4;
+  optional uint8 number_of_bytes_in_header_record = 5;
+  optional Reserverd reserverd = 6;
+  optional uint8 number_of_data_records = 7;
+  optional uint32  num_of_signals_in_data_record = 8;
+  optional Array labels = 9;
+  optional Array transducer_type = 10;
+  optional Array physical_dimension = 11;
+  optional Array physical_minimum = 12;
+  optional Array physical_maximum = 13;
+  optional Array digital_minimum = 14;
+  optional Array digital_maximum = 15;
+  optional Array prefiltering = 16;
+  optional Array number_of_samples_in_each_data_record = 17;
+  optional Array reserverd = 18;
+}

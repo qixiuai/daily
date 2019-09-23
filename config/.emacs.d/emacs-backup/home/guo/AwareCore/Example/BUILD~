@@ -1,0 +1,6 @@
+cc_binary(
+    name = "swap",
+    srcs = ["swap.c"],
+    features = ["windows_export_all_symbols"],
+    linkshared = 1,
+)

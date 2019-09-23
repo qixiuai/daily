@@ -1,0 +1,31 @@
+
+#include "burn/stage_report.h"
+
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+
+
+int main() {
+  std::string label_path = \
+    "/home/guo/data/sleepstage/database/ISRUC_Sleep/subgroupI/1/1_1.txt";
+
+  std::ifstream in(label_path);
+  std::vector<int> stages;
+  std::string line;
+  while (in >> line) {
+    int label = std::stoi(line);
+    if (label == 5)
+      label = 4;
+    stages.push_back(label);
+  }
+  
+  burn::StageReport::Args args(stages, 0, 870);
+  burn::StageReport::Rets rets;
+  burn::StageReport stage_report(&rets, &args);
+  stage_report.Run();
+  
+  
+  return 0;
+}

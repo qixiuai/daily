@@ -1,0 +1,18 @@
+#include <iostream>
+#include <fstream>
+#include <google/protobuf/util/time_util.h>
+#include <iostream>
+#include <string>
+
+#include "example/cc/addressbook.pb.h"
+
+
+
+
+int main(int argc, char* argv[]) {
+  GOOGLE_PROTOBUF_VERFY_VERSION;
+  
+  
+  google::protobuf::ShutdownProtobufLibrary();
+  return 0;
+}

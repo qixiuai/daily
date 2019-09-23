@@ -1,0 +1,30 @@
+
+
+class Rendezous:
+
+    def __init__():
+        self.db = {}
+
+    def send(key, value):
+        self.db[key] = value
+
+    def recv(key):
+        return self.db[key]
+
+
+# simple session
+class Session:
+
+    def __init__():
+        self.rendez = Rendezous()
+
+    def put(file):
+        pass
+        
+    def get(key):
+        pass
+
+    def post(key, value):
+        pass
+
+    

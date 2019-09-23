@@ -1,0 +1,4 @@
+Ring : Ring.cc
+	clang++ -stdlib=libc++ -std=c++17 -I/home/guo/Github/llvm_svn/projects/libcxx/include -L/home/guo/Github/llvm_svn/build/lib $< -g -o $@
+	./Ring
+	rm Ring

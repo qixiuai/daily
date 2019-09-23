@@ -1,0 +1,6 @@
+cc_library(
+    name = "python",
+    srcs = ["libpython3.6m.so"],
+    hdrs = glob(["include/**/*.h"]),
+    visibility = "python:public",
+)

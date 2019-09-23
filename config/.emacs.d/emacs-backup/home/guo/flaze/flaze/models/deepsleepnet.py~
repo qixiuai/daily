@@ -1,0 +1,29 @@
+
+""" deepsleepnet """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import tensorflow as tf
+import gin.tf
+
+
+@gin.configurable(whitelist=["hidden_size", "dropput"])
+class DeepSleepNet(tf.keras.Model):
+    """ deepsleepnet """
+
+    def __init__(self, features_info=None, input_names=None, target_names=None,
+                 num_hidden_layers=2, hidden_size=64, dropout=0.1):
+        super(DeepSleepNet, self).__init__()
+        
+        
+        
+    def call(self, inputs, training=False):
+        pass
+
+
+def deepsleepnet_paper():
+    gin.bind_parameter("DeepSleepNet.num_hidden_layers", 2)
+    return DeepSleepNet
+    
+

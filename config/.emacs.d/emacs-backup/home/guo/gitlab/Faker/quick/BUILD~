@@ -1,0 +1,24 @@
+cc_binary(
+    name = "main",
+    srcs = ["main.cc", "wrapper.cc", "wrapper.h"],
+    copts = ["-std=c++17"],
+    deps = [":classifier"],
+)
+
+
+cc_library(
+    name = "classifier",
+    srcs = ["classifier.cc"],
+    hdrs = ["classifier.h"],
+    copts = ["-std=c++17"],
+    deps = [":findpeaks"],    
+)
+
+
+cc_library(
+    name = "findpeaks",
+    srcs = ["findpeaks.cc"],
+    hdrs = ["findpeaks.h"],
+    copts = ["-std=c++17"],
+    deps = ["//:boost"],
+)

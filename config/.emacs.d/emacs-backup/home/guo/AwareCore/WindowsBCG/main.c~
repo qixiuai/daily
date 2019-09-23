@@ -1,0 +1,26 @@
+
+#include <stdio.h>
+
+#include "BCGWrapper.h"
+
+
+int main() {
+  char* data_dir  = "/home/guo/AwareCore/Giants/data/";
+  
+  int Fz = 100;
+  
+  BCGFramework * bcg = BCGFramework_construct(Fz);
+  
+  BCGResult * ret = BCGResult_construct();
+  
+  BCGFramework_run(bcg, ret, 123);
+  int* result = (int*)ret;
+  
+  printf("%d%d%d%d\n",result[0],result[1],result[2],result[3]);
+  
+  BCGResult_destruct(ret);
+  
+  BCGFramework_destruct(bcg);
+  
+  return 0;
+}

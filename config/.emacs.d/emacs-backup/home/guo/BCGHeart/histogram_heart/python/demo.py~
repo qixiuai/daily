@@ -1,0 +1,13 @@
+
+
+class Demo(object):
+
+    A = 1
+
+    def get_a(self):
+        return A
+
+
+
+demo = Demo()
+print(demo.get_a())

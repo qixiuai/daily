@@ -1,0 +1,36 @@
+str = "Num =
+
+  Columns 1 through 14
+
+   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004
+
+  Columns 15 through 28
+
+   -0.0004    0.9996   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004   -0.0004
+
+  Columns 29 through 31
+
+   -0.0004   -0.0004   -0.0004"
+
+function coeff2array(str)
+    println("Hello")
+    ret_str = ""
+    array = split(str, '\n')
+    ret_arr = []
+    for ind = 5:4:length(array)
+        push!(ret_arr, strip(array[ind]))
+    end
+    count = 0
+    for line in ret_arr
+        nums = split(line, "   ")
+        count += length(nums)
+        ret_str = string(ret_str, ',', join(nums, ","))
+    end
+    println(count)
+    return ret_str
+end
+
+ret = coeff2array(str)
+println(ret)
+
+

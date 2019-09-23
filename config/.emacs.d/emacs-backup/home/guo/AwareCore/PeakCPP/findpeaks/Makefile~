@@ -1,0 +1,3 @@
+run : findpeaks.cc
+	clang++ $< -o $@ -g
+	./run

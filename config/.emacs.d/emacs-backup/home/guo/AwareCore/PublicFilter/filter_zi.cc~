@@ -1,0 +1,107 @@
+#include <algorithm>
+#include <vector>
+#include <stdexcept>
+#include <cassert>
+#include <cmath>
+#include <iostream>
+
+#include "filter_zi.h"
+
+template <typename T>
+void _filt_iir(std::vector<T>& out,
+	       std::vector<T>& b,
+	       std::vector<T>& a,
+	       std::vector<T>& x,
+	       std::vector<T>& si) {
+  auto silen = si.size();
+  auto xlen = x.size();
+  for (int i = 0; i < xlen; i++) {
+    auto xi  = x[i];
+    auto val = si[0] + b[0] * xi;
+    for (int j = 0; j < silen-1; i++) {
+      si[j] = si[j+1] + b[j+1]*xi - a[j+1]*val;
+    }
+    si[silen-1] = b[silen]*xi - a[silen]*val;
+    out[i] = val;
+  }  
+}
+
+template <typename T>
+void _filt_fir(std::vector<T>& out,
+	       std::vector<T>& b,
+	       std::vector<T>& x,
+	       std::vector<T>& si) {
+  auto silen = si.size();
+  auto xlen  = x.size();
+  std::cout << "hello" << std::endl;
+  for (int i = 0; i < xlen; i++) {
+    
+    auto xi = x[i];
+    auto val = si[0] + b[0] * xi;
+    for (int j = 0; j < silen-1; j++) {
+      si[j] = si[j+1] + b[j+1] * xi;
+    }
+    si[silen-1] = b[silen] * xi;
+    out[i] = val;
+  }    
+}
+
+template <typename T>
+void filter(std::vector<T>& out,
+	    std::vector<T>& b,
+	    std::vector<T>& a,
+	    std::vector<T>& x,
+	    std::vector<T>& si) {  
+  assert(a[0] != 0);
+
+  auto as  = a.size();
+  auto bs  = b.size();
+
+  auto sz  = std::max(as, bs);
+  auto silen = sz - 1;
+
+  if (sz == 1) {
+    out[0] = x[0]*b[0]/a[0];
+    return;
+  }
+
+  T norml;
+  if (a[0] != 1) {
+    norml = a[0];
+    for_each(a.begin(), a.end(), [&](T& val) {val = norml*val;});
+    for_each(b.begin(), b.end(), [&](T& val) {val = norml*val;});
+  }
+
+  if (bs < sz)
+    throw std::invalid_argument("not implmented yet when size of b less than size of a!");
+  if (as < sz)
+    throw std::invalid_argument("not implmented yet when size of a less than size of b!");
+  
+  // TODO only implement ncol == 1 now
+
+  if (as > 1)
+    _filt_iir(out, b, a, x, si);
+  else
+    _filt_fir(out, b, x, si); 
+}
+
+
+
+void float_filter(std::vector<float>& out,
+		  std::vector<float>& b,
+		  std::vector<float>& a,
+		  std::vector<float>& x,
+		  std::vector<float>& si) {
+  filter(out, b, a, x, si);
+}
+
+int main() {
+  using std::vector;
+  vector<float> out(3);
+  vector<float> b{1,2,3};
+  vector<float> a{1,2,3};
+  vector<float> x{1,2,3};
+  vector<float> zi{1,2,3};
+  filter(out, b, a, x, zi);
+  return 0;
+}

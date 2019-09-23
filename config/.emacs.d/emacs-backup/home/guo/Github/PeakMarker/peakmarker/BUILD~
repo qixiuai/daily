@@ -1,0 +1,21 @@
+cc_library(
+    name = "peak_marker",
+    srcs =  ["findpeaks.cc"],
+    hdrs = ["findpeaks.h"],
+    copts = ["-std=c++17"],
+    deps = ["//:boost"],
+)
+
+cc_binary(
+    name = "peak_marker.dll",
+    srcs = ["findpeaks.cc", "findpeaks.h"],
+    features = ["windows_export_all_symbols"],
+    linkshared = 1,
+    copts = ["-std=c++17"],
+    deps = ["//:boost"],
+)
+
+cc_library(
+    name = "boost",
+    srcs = glob(["boost/**/*.hpp"]),
+)

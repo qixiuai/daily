@@ -1,0 +1,21 @@
+\documentclass{report}
+
+\begin{document}
+
+
+# PSG Sleep Stage
+Skills: Linux, Python, Tensorflow, PyTorch, Deep Learning, Machine Learning
+Project Description:
+Sleep staging is a fundamental but time consuming process in any sleep laboratory. To greatly speed up sleep staging
+without compromising accuracy, we can develeop a framework for performing real-time automatic sleep stage
+classification based on deep learning / machine learning algorithms.
+
+# PeakDetector Algorithm and High Perfermance Implementation, Aplications to BCG/PSG data
+Skills: C/C++, One High level programming language
+
+
+\end{document}
+
+
+
+

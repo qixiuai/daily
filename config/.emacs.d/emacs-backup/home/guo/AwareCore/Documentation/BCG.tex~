@@ -1,0 +1,21 @@
+\documentclass{article}
+
+\usepackage{zh_CN-Adobefonts_internal}
+
+\pagenumbering{gobble}
+
+\title{Review on BCG}
+
+\begin{document}
+\maketitle
+
+\section{BCG}
+
+
+\section{ECG}
+
+\section{Filters}
+
+\section{BCG信号的认识}
+
+\end{document}

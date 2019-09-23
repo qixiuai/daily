@@ -1,0 +1,40 @@
+
+#include "burn/leg_report.h"
+
+namespace burn {
+
+
+  void LegReport::Run() {
+    auto& table = rets_->table;
+    auto plms = args_->plms;
+    auto stages = args_->stages;
+    auto sleep_onset_epoch_id = args_->sleep_onset_epoch_id;
+    
+    float num_plms = plms.size();
+    float num_epochs = stages.size();
+    float sleep_time_in_hour = (num_epochs - sleep_onset_epoch_id) / 2 / 60;
+    table["NumPlms"] = num_plms;
+    table["PlmsIndex"] = num_plms / sleep_time_in_hour;
+    
+    int num_plms_with_wake = 0;
+    bool is_wake = false;
+    for (int i = 0; i < num_plms; i++) {
+      auto plm = plms[i];
+      int start_epoch_id = IndexToEpochID(plm.start);
+      int end_epoch_id = IndexToEpochID(plm.end);
+      int start_stage = stages[start_epoch_id];
+      int end_stage = stages[end_epoch_id];
+      if (start_stage == 0 || end_stage == 0)
+	is_wake = true;
+      if (is_wake)
+	num_plms_with_wake += 1;
+    }
+
+    table["NumPlmsWake"] = num_plms_with_wake;
+    table["PlmWakeIndex"] = num_plms_with_wake / sleep_time_in_hour;
+  }
+  
+  
+
+}
+

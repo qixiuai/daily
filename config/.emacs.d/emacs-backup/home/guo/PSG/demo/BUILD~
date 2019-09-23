@@ -1,0 +1,6 @@
+cc_binary(
+    name = "fftw_demo",
+    srcs = ["fftw_demo.cc"],
+    deps = ["//fftw:fftw3"],
+)
+

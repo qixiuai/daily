@@ -1,0 +1,2 @@
+Hello: helloworld.cc
+	g++ $< -o $@

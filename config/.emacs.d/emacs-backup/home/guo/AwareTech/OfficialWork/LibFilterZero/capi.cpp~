@@ -1,0 +1,36 @@
+#include <iostream>
+
+#include "sigpack.h"
+
+#include "capi.h"
+
+using namespace arma;
+using namespace sp;
+
+// cutoff_frequency [0..1]
+// extern "C" {
+void fir1(double* Y, double* signal, int signal_size, \
+	  int order, double cutoff_frequency) {
+    FIR_filt<double, double, double> fir_filt;
+    auto b = fir1(order, cutoff_frequency);
+    fir_filt.set_coeffs(b);
+    
+    for (int index=0; index < signal_size; index++) {
+      Y[index] = fir_filt(signal[index]);
+    }
+}
+
+// }
+int main() {
+  vec b;
+  int N = 15;
+
+  double X[] = {1,2,2,2.0};
+  double Y[4] = {0, 0, 0, 0};
+  fir1(Y, X, 4, 2, 12);
+  for (int ind=0; ind<4; ind++) {
+    std::cout << Y[ind] << std::endl;
+  }
+  
+  return 0;
+}

@@ -1,0 +1,28 @@
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+cc_library(
+    name = "boost",
+    hdrs = glob(["boost/**/*.hpp"]),
+)
+
+cc_library(
+    name = "libcrypto",
+    srcs = glob(["openssl/crypto/**/*.c"]),
+    hdrs = glob(["openssl/crypto/**/*.h"]),
+    deps = [":internal", ":crypto_internal"],
+)
+
+cc_library(
+    name = "crypto_internal",
+    hdrs = glob(["openssl/crypto/include/internal/*.h"]),
+)
+
+cc_library(
+    name = "internal",
+    hdrs = glob(["openssl/include/internal/*.h"]),
+)

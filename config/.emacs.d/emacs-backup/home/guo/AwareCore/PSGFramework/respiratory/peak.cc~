@@ -1,0 +1,138 @@
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <numeric>
+#include <memory>
+#include <cstdlib>
+
+#include "utils/utils.h"
+
+#include "peak.h"
+
+namespace physio { 
+
+template <class T>
+std::vector<int> findpeaks(const T& signal, float threshold, int min_dist);
+  
+  PeakDetector::PeakDetector(int Fz,
+			     int buffer_size,
+			     int num_cycles) {
+  
+    int num_peaks              = num_cycles + 1;
+    this->ipks                 = Buffer<int>(num_peaks);
+  
+    this->__Fz_                = Fz;
+    this->__buffer_size_       = buffer_size;
+    this->__signal_            = Buffer<int>(buffer_size);
+
+    int update_interval        = Fz*1;
+    this->__update_interval_   = update_interval;
+    this->__update_clock_      = update_interval;
+    this->__next_value_index_  = 0;
+    this->__ipk_delay_         = 100;
+  }
+
+  int PeakDetector::run(double value) {
+    this->__signal_.push_back(value);
+    this->__next_value_index_ += 1;
+    this->__update_clock_ -= 1;
+    if (this->__update_clock_ == 0) {
+      this->__real_run();
+      this->__update_clock_ = this->__update_interval_;
+    }
+    return 0;
+  }
+
+  void PeakDetector::__real_run() {
+    if (!this->__signal_.full()) {
+      return;
+    }
+
+    std::vector<int> ipks_buffer;
+    findpeaks<Buffer<double>>(ipks_buffer,
+			      this->__signal_,
+			      0.8,
+			      100);
+    auto signal_length = this->__signal_.size();
+    int ipk_max        = signal_length - this->__ipk_delay_;
+    int ipk_min        = ipk_max       - this->__update_interval_;
+    int index_offset   = this->__next_value_index_ - signal_length;
+
+    if (this->ipks.size() == 0) {
+      for (int i=0; i<ipks_buffer.size(); i++) {
+	auto ipk = ipks_buffer[i];
+	if (ipk <= ipk_max) {
+	  this->ipks.push_back(ipk);
+	}
+      }
+      return;
+    }
+
+    for (int i=0; i<ipks_buffer.size(); i++) {
+      auto ipk = ipks_buffer[i];
+      if (ipk <= ipk_min || ipk > ipk_max) {
+	continue;
+      }
+      this->ipks.push_back(ipk);
+    }
+  }
+
+  template <class T>
+  void findpeaks(std::vector<int>& ipks_find,
+		 const T& signal,
+		 float threshold,
+		 int min_dist) {
+    int len = signal.size();
+    double signal_max = *std::max_element(signal.begin(), signal.end());
+    double signal_min = *std::min_element(signal.begin(), signal.end());
+    double thres = threshold * (signal_max - signal_min) + signal_min;
+    std::vector<double> diffs(len-1);
+    for (int i = 0; i<len-1; i++) {
+      auto val = signal[i+1] - signal[i];
+      diffs.push_back(val);
+    }
+    std::vector<int> ipks, highest_ipks;
+    for (uint32 i = 0; i < diffs.size(); i++) {
+      if (diffs[i]   >= 0 &&
+	  diffs[i+1] <= 0 &&
+	  signal[i+1] >= thres) {
+	ipks.push_back(i+1);
+	highest_ipks.push_back(i+1);
+      }
+    }
+    if (ipks.size() < 1) {
+      return;
+    }
+
+    std::sort(highest_ipks.begin(),
+	      highest_ipks.end(),
+	      [&signal](int ipk1, int ipk2){
+		return signal[ipk1] > signal[ipk2];
+	      });
+  
+    auto flags = std::vector<bool>(signal.size(), false);
+    for (const auto idx: ipks)
+      flags[idx] = true;
+
+    for (const auto ipk: highest_ipks) {
+      if (flags[ipk]) {
+	auto sl_st = std::max(0, ipk - min_dist);
+	auto sl_ed = std::min(int(signal.size()-1), ipk + min_dist);
+	for (int i=sl_st; i<=sl_ed; i++)
+	  flags[i] = false;
+	flags[ipk] = true;
+      }
+    }  
+  
+    for (uint32 i=0; i < flags.size(); i++) {
+      if (flags[i]) {
+	ipks_find.push_back(i);
+      }
+    } 
+    return;
+  }
+
+}

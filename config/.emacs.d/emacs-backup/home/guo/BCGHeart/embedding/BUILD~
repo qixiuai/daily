@@ -1,0 +1,6 @@
+
+cc_library(
+    srcs = ["bcg.cc",]
+    hdrs = ["bcg.h"]
+)
+

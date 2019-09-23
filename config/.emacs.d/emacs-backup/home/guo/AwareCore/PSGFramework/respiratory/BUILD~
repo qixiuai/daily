@@ -1,0 +1,13 @@
+
+cc_binary(
+    name = "run",
+    srcs = ["respiratory.cc", "respiratory.h"],
+    deps = ["//utils:utils"],
+)
+
+cc_library(
+    name = "respiratory",
+    srcs = ["respiratory.cc"],
+    hdrs = ["respiratory.h"],
+    deps = ["//utils:utils"],
+)

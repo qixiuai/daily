@@ -1,0 +1,53 @@
+#include "burn/simple_resp.h"
+
+#include <fstream>
+#include <vector>
+#include "burn/lib/edfplus/edfplus.h"
+
+using namespace burn;
+
+burn::lib::EdfPlus* get_edf() {
+  std::string edf_path = "/home/guo/physio/PSG_data/Resp_expr/阻塞型呼吸暂停_155005_SD.edf";
+  //std::string edf_path = "/home/guo/physio/PSG_data/sleep_data/A001_1812042327/A001_1812042327.edf";
+  std::ifstream in(edf_path, std::ios::binary);
+  in.seekg(0, in.end);
+  int length = in.tellg();
+  in.seekg(0, in.beg);
+  
+  char* raw = new char[length];
+  in.read(raw, length);
+  //  cerr << raw.size() << '\n';
+
+  std::vector<unsigned char> vec;
+  vec.reserve(length);
+  for (int i = 0; i < length; i++) {
+    vec.push_back(raw[i]);
+  }
+  return new burn::lib::EdfPlus(vec);
+}
+
+void vec_to_txt(const std::vector<float>& vec, std::string filename) {
+  std::ofstream ofs(filename);
+  for (auto v : vec) {
+    ofs << v << '\n';
+  }
+}
+
+
+int main() {
+  // generate stage events
+  auto edf = get_edf();
+  
+  auto press = edf->signals["Resp pressure"];
+  
+  auto press_amp = maxmin_filter(press, 1000, 100);
+  //vec_to_txt(press_amp, "/home/guo/burn/python/maxmin.txt");
+  
+  auto press_base = baseline_filter(press_amp);
+  //vec_to_txt(press_amp, "/home/guo/burn/python/press_base.txt");
+
+  auto events = detect_events(press);
+    
+  delete edf;
+  return 0;
+}

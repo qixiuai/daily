@@ -1,0 +1,23 @@
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  
+  typedef struct BCGFramework BCGFramework;
+  typedef struct BCGResult BCGResult;
+  
+  BCGFramework * BCGFramework_construct(int Fz);
+
+  BCGResult * BCGResult_construct();
+  
+  void BCGFramework_run(BCGFramework* bcg, BCGResult * ret, int val);
+  
+  void BCGResult_destruct(BCGResult* ret);
+  
+  void BCGFramework_destruct(BCGFramework * bcg);
+
+  
+#ifdef __cplusplus
+}
+#endif

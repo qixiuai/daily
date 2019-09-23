@@ -1,0 +1,27 @@
+
+import pandas as pd
+import numpy as np
+
+
+class NameEncoder(object):
+    
+    def __init__(self):
+        data_dir = "/home/guo/data/kaggle/OpenImage2019/"
+        class_path = data_dir + "challenge-2019-classes-description-500.csv"
+        df = pd.read_csv(class_path, header=None)
+        self.bin2name = {}
+        self.name2bin = {}
+        nrows = df.shape[0]
+        for i in range(nrows):
+            bin = df.iloc[i][0]
+            name = df.iloc[i][1]
+            self.bin2name[bin] = name
+            self.name2bin[name] = bin
+
+    def encode(self, class_name):
+        return self.name2bin[class_name]
+
+    def decode(self, binary):
+        return self.bin2name[binary]
+
+

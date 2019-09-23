@@ -1,0 +1,29 @@
+
+namespace physio {
+
+  class SleepStage {
+  public:
+    int predict(std::vector<int> eeg_c4_m1,
+		std::vector<int> eog_e1_m2);
+  private:
+    Filter eeg_filter;
+    Filter eog_filter;
+    void preprocess(const std::vector<int>& signal) const;
+  };
+
+  int SleepStage::predict(std::vector<int> eeg_c4_m1,
+			  std::vector<int> eog_e1_m2) {
+    eeg_filter.filter(signal);
+    eog_filter.filter(signal);
+    //    stft();
+    //    downsample();
+    return 0;
+  }
+  
+  void SleepStage::preprocess(const std::vector<int>& signal) const {
+    
+    downsample(signal);
+    stft(signal);
+  }
+  
+} // end namespace physio

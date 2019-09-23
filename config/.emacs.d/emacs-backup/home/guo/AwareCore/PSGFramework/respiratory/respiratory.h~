@@ -1,0 +1,34 @@
+#ifndef _PHYSIO_RESP_
+#define _PHYSIO_RESP_
+
+#include "utils/utils.h"
+#include "peak.h"
+
+namespace physio {  
+  class Respiratory {
+  public:
+    Respiratory(int onp_Fz,
+		int ont_Fz,
+		int num_cycles=60) {
+      int buffer_size_onp = 25*onp_Fz;
+      this->onp_peak = PeakDetector(onp_Fz,
+				    buffer_size_onp,
+				    num_cycles);
+      int buffer_size_ont = 25*ont_Fz;
+      this->ont_peak = PeakDetector(ont_Fz,
+				    buffer_size_ont,
+				    num_cycles);
+    }
+    
+    void run(int onp, int ont) {
+      this->onp_peak.run(onp);
+      this->ont_peak.run(ont);
+    }
+    
+    PeakDetector onp_peak;
+    PeakDetector ont_peaker;
+  };
+
+}; //end namespace physio
+
+#endif

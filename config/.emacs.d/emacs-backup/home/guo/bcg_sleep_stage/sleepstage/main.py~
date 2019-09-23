@@ -1,0 +1,164 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from absl import app
+from absl import flags
+from absl import logging
+
+import os
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import f1_score
+from sklearn.metrics import roc_auc_score
+
+import gin
+import pdb
+
+@gin.configurable
+class Dataset(object):
+    def __init__(self, data_dir,
+                 use_two_stages_labels=False):
+        self._data_dir = data_dir
+        self._data_path = os.path.join(data_dir, "total_data")
+        label_file = \
+          "total_labels_2_classes" if use_two_stages_labels else "total_labels_4_classes"
+        self._label_path = os.path.join(data_dir, label_file)
+        print(self._label_path)
+        
+    def generate_data(self):
+        data   = np.loadtxt(self._data_path)
+        labels = np.loadtxt(self._label_path)
+        data, self._test_data, labels, self._test_label = \
+          train_test_split(data, labels, test_size=0.15, random_state=0)
+        self._train_data, self._eval_data, self._train_label, self._eval_label = \
+          train_test_split(data, labels, test_size=0.2, random_state=0)
+
+    @property
+    def train_dataset(self):
+        return (self._train_data, self._train_label)
+
+    @property
+    def eval_dataset(self):
+        return (self._eval_data, self._eval_label)
+
+    @property
+    def test_dataset(self):
+        return (self._test_data, self._test_label)
+
+
+@gin.configurable
+class Preprocess(object):
+    def __init__(self,
+                 use_raw_data=False,
+                 use_mean=True):
+        pass
+
+    def minmax_normalize(self, data):
+        numerator = data - np.min(data, axis=1).reshape(-1,1)
+        numerator = numerator.reshape(1, -1)
+        denominator = np.max(data, axis=1) - np.min(data, axis=1)
+        denominator = denominator.reshape(-1, 1)
+        return numerator / denominator
+    
+    def __call__(self, data):
+        return self.minmax_normalize(data)
+        arr = []
+        arr.append(np.mean(data, axis=1))
+        arr.append(np.std(data, axis=1))
+        arr.append()
+
+        features = np.asarray(arr).T
+        return features
+
+
+@gin.configurable
+class Model(object):    
+    def __init__(self, use_logistic=True):
+        self._model = LogisticRegression(random_state=0,
+                                         class_weight="balanced",
+                                         solver='lbfgs',
+                                         n_jobs=1)
+    @property
+    def model(self):
+        return self._model
+    
+    def fit(self, data, labels):
+        self.model.fit(data, labels)
+        return self
+
+    def predict(self, data):
+        return self.model.predict(data)
+
+    def score(self, data, true_labels, msg):
+        s = self.model.score(data, true_labels)
+        print(msg, "acc:", s)
+        return s
+
+    def f1_score(self, data, true_labels, msg):
+        label_preds = self.predict(data)
+        score = f1_score(true_labels, label_preds, average="macro")
+        print(msg, "f1_score:", score)
+        return score
+    
+    def confusion_matrix(self, data, true_labels, msg):
+        label_preds = self.predict(data)
+        matrix = confusion_matrix(true_labels, label_preds)
+        print(msg+":")
+        print(matrix)
+        return matrix
+
+    def roc_auc_score(self, data, true_labels, msg):
+        label_preds = self.predict(data)
+        score = roc_auc_score(true_labels, label_preds)#, "macro")
+        print(msg, ' roc_auc_score: ', score)
+        return score
+    
+
+class Trainer(object):
+    def __init__(self):
+        self._dataset = Dataset()
+        self._preprocess = Preprocess()
+        self._model = Model()
+
+    def run(self):
+        self._dataset.generate_data()
+        train_data, train_labels = self._dataset.train_dataset
+        eval_data,  eval_labels = self._dataset.eval_dataset
+        
+        train_data = self._preprocess(train_data)
+        eval_data  = self._preprocess(eval_data)
+
+        self._model.fit(train_data, train_labels)
+
+        # metrics
+        self._model.confusion_matrix(train_data,
+                                     train_labels,
+                                     "train_datasett confusion matrix")
+        self._model.confusion_matrix(eval_data,
+                                     eval_labels,
+                                     "eval_dataset confusion matrix")
+        
+        acc_train = self._model.score(train_data, train_labels, "trainset")
+        acc_eval  = self._model.score(eval_data, eval_labels, "evalset")
+
+        f1score_train = self._model.f1_score(train_data, train_labels, "trainset")
+        f1score_eval = self._model.f1_score(eval_data, eval_labels, "evalset")
+
+        score_train = self._model.roc_auc_score(train_data, train_labels, "trainset")
+        score_eval = self._model.roc_auc_score(eval_data, eval_labels, "evalset")
+
+
+def main(argv):
+    del argv
+    gin.parse_config_file("gin.conf")
+#    gin.parse_config_file("gin.xml")
+    trainer = Trainer()
+    trainer.run()
+
+if __name__ == '__main__':
+    app.run(main)
+

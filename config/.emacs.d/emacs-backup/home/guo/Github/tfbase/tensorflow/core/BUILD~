@@ -1,0 +1,41 @@
+
+cc_library(
+    name = "lib_platform",
+    hdrs = ["platform/platform.h"],
+)
+
+filegroup(
+    name = "platform_base_hdrs",
+    srcs = [
+        "platform/byte_order.h",
+        "platform/cord.h",
+        "platform/env_time.h",
+        "platform/logging.h",
+        "platform/macros.h",
+        "platform/platform_strings.h",
+        "platform/types.h",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "platform_base",
+    srcs = [
+        "platform/default/integral_types.h",
+        "platform/default/logging.h",
+    ] + [
+        "platform/default/logging.cc",
+        "platform/default/env_time.cc",
+    ],
+    hdrs = [":platform_base_hdrs"],
+    copts = [],
+    tags = ["avoid_dep"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":lib_platform",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+

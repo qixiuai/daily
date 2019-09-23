@@ -1,0 +1,34 @@
+from __future__ import print_function, division
+
+from graphviz import Digraph
+
+dot = Digraph(comment="Job Plan", format='jpeg')
+#node_attr={'shape':'plaintext'}
+print(dot)
+
+dot.node('A', 'Plan')
+dot.node('B', 'BCG')
+dot.node('C', 'PSG')
+
+# add edges
+dot.edges(['AB', 'AC'])
+
+#BCG Alg
+dot.node('D', 'findpeaks')
+dot.edges(['BD'])
+dot.node('G', 'implement it')
+dot.node('F', 'findpeaks twice')
+dot.node('E', 'adaptive')
+dot.edges(['DG', 'DF', 'DE'])
+
+
+# PSG
+dot.node('L', 'sleep stage')
+dot.node('M', 'various stat indexes')
+dot.edges(['CL', 'CM'])
+
+dot.graph_attr['rankdir'] = 'LR'
+#dot.edge_attr.update(arrowhead='vee', arrowsize='2')
+
+dot.render('output/plan', view=True)
+

@@ -1,0 +1,6 @@
+ds-exporter \
+  --model=shake_shake \
+  --hparams_set=shakeshake_quick \
+  --problem=psg_isruc \
+  --data_dir=~/data/tmp/ds_data \
+  --output_dir=~/data/sleepstage/sleepbrain/tmp/ds_train/deepstage \

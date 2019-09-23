@@ -1,0 +1,65 @@
+""" train the CNN model """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import tensorflow as tf
+tf.random.set_seed(2019)
+
+import gin
+
+from absl import app
+from absl import logging
+
+from dataset import IsrucDataset
+from model import DukeCNN
+#from model import get_model_DukeCNN
+from model import get_standard_DukeCNN
+from model import get_experiment_model
+
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
+
+class Trainer(object):
+    """ Trainer """
+    
+    def __init__(self):
+       pass
+
+    def train(self):
+       isruc_train = IsrucDataset(train=True)
+       dataset_train = tf.data.Dataset.from_generator(isruc_train, (tf.float32, tf.int64))
+       isruc_test = IsrucDataset(train=False)
+       dataset_test = tf.data.Dataset.from_generator(isruc_test, (tf.float32, tf.int64))
+       batch_size = 1024
+       dataset_train = dataset_train.shuffle(buffer_size=batch_size).batch(batch_size)
+       dataset_test = dataset_test.shuffle(buffer_size=batch_size).batch(batch_size)
+       #model = get_model_DukeCNN()
+       #model = get_standard_DukeCNN()
+       model = get_experiment_model()
+       #model = DeepFeatureNet
+       model.compile(loss="categorical_crossentropy",
+                     optimizer="adam",
+                     metrics=['accuracy'])
+       model_name = "stagefour_9epochs_64filters_fulldata"
+       callbacks = [
+           TensorBoard("/home/guo/data/sleepstage/logs/"+model_name),
+           ModelCheckpoint("ckpts/model.{epoch:02d}-{val_accuracy:.2f}.hdf5",
+                           monitor='val_accuracy', save_best_only=False,
+                           save_weights_only=True, mode='auto', period=1)
+       ]
+       model.fit(dataset_train, epochs=600, validation_data=dataset_test,
+                 callbacks=callbacks, use_multiprocessing=True)
+       model.save(model_name+".h5")
+       tf.keras.experimental.export_saved_model(
+           model, "/home/guo/BCGSleepStage/DukeCNN/saved_models", serving_only=True)
+
+
+def main(argv):
+    del argv
+    trainer = Trainer()
+    trainer.train()
+
+
+if __name__ == "__main__":
+    app.run(main)

@@ -1,0 +1,85 @@
+#ifndef BURN_LIB_FILTER_PSG_
+#define BURN_LIB_FILTER_PSG_
+
+#include <vector>
+#include "burn/lib/filter/filter.h"
+
+namespace burn {
+  namespace lib {
+
+    class PSGFilter {
+    public:
+      virtual double filter(double value) = 0;
+      virtual std::vector<float> filter_offline(const std::vector<float>& signal) {
+	std::vector<float> ret;
+	ret.reserve(signal.size());
+	for (auto value : signal) {
+	  auto value_ret = this->filter(value);
+	  ret.push_back(value_ret);
+	}
+	return ret;
+      }
+   };
+    
+    class SingleNotchFilter : public PSGFilter {
+    public:
+      SingleNotchFilter():
+	linear_filter("burn/lib/filter/coeffs/single_notch_500_b.csv",
+		      "burn/lib/filter/coeffs/single_notch_500_a.csv") {}
+      double filter(double value) override {
+	return linear_filter.filter(value);
+      }
+
+    private:
+      LinearFilter linear_filter;
+    };
+
+    class EEGEOGFilter : public PSGFilter {
+    public:
+      EEGEOGFilter():
+	notch(),
+	lowpass("burn/lib/filter/coeffs/lowpass_35_500_b.csv",
+		 "burn/lib/filter/coeffs/lowpass_35_500_a.csv") {}
+      double filter(double value) override {
+	value = notch.filter(value);
+	value = lowpass.filter(value);
+	return value;
+      }
+    private:
+      SingleNotchFilter notch;
+      LinearFilter lowpass;
+      LinearFilter highpass;
+    };
+
+    class EMGFilter : public PSGFilter {
+    public:
+      EMGFilter():
+	notch(),
+	bandpass("burn/lib/filter/coeffs/bandpass_10_70_500_b.csv",
+		 "burn/lib/filter/coeffs/bandpass_10_70_500_a.csv") {}
+      double filter(double value) override {
+	value = notch.filter(value);
+	return bandpass.filter(value);
+      }
+    private:
+      SingleNotchFilter notch;
+      LinearFilter bandpass;
+    };
+
+    class ECGFilter : public PSGFilter {
+    public:
+      ECGFilter(): notch() {}
+      double filter(double value) override {
+	return notch.filter(value);
+      }
+    private:
+      SingleNotchFilter notch;
+    };
+
+  }
+}
+
+
+
+
+#endif

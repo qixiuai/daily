@@ -1,0 +1,195 @@
+
+#include "burn/resp_report.h"
+
+namespace burn {
+
+
+  float NumEventsWithStage(const std::vector<Event>& events,
+			   const std::vector<int>& stages,
+			   int stage,
+			   int fs=100) {
+    int num = 0;
+    for (auto it = events.begin(); it != events.end(); it++) {
+      auto st = it->start;
+      auto ed = it->end;
+      auto epoch_id_st = IndexToEpochID(st, fs=100);
+      auto epoch_id_ed = IndexToEpochID(ed, fs=100);
+      for (int i = epoch_id_st; i <= epoch_id_ed; i++) {
+	if (stages[i] == stage) {
+	  num += 1;
+	  break;
+	}
+      }
+    }
+    return num;
+  }
+  
+  void GetRespEpochFromEvents(std::vector<float>& resp_epochs,
+			      std::vector<Event> events,
+			      int fs=100) {
+    // assume resp_epochs allocated with 0s
+    int num_events = events.size();
+    for (int i = 0; i < num_events; i++) {
+      auto event = events[i];
+      auto start_epoch_id = IndexToEpochID(event.start);
+      auto end_epoch_id = IndexToEpochID(event.end);
+      for (int epoch_id = start_epoch_id;
+	   epoch_id <= end_epoch_id;
+	   epoch_id++) {
+	resp_epochs[epoch_id] += 1;
+      }
+    }
+    int num_epochs = resp_epochs.size();
+    for (int epoch_id = 0; epoch_id < num_epochs; epoch_id++) {
+      // resp_epochs[epoch_id] /= (30/3600);
+      resp_epochs[epoch_id] *= 120;
+    }    
+  }
+  
+  void RespReport::Run() {
+    auto& table = rets_->table;
+    auto stages = args_->stages;
+    auto oas = args_->oas;
+    auto cas = args_->cas;
+    auto mas = args_->mas;
+    auto hyps = args_->hyps;
+    auto reras = args_->reras;
+    auto sleep_onset_epoch_id = args_->sleep_onset_epoch_id;
+
+    int num_epochs = stages.size();
+    float sleep_time_in_hours = \
+      (num_epochs - sleep_onset_epoch_id) / 2 / 60;
+
+    float num_reras = reras.size();
+    float rerai = num_reras / sleep_time_in_hours;
+    table["RERAI"] = rerai;
+    
+    float num_oas = oas.size();
+    table["OA_TimesHappenedTotal"] = num_oas;
+    
+    float num_cas = cas.size();
+    table["CA_TimesHappenedTotal"] = num_cas;
+    
+    float num_mas = mas.size();
+    table["MA_TimesHappenedTotal"] = num_mas;
+
+    float num_apneas = num_oas + num_cas + num_mas;
+    table["Apnea_TimesHappenedTotal"] = num_apneas;
+    
+    float ai = num_apneas / sleep_time_in_hours;
+    table["AI"] = ai;
+    
+    int num_hyps = hyps.size();
+    table["Hyp_TimesHappenedTotal"] = num_hyps;
+    
+    float hypi = num_hyps / sleep_time_in_hours;
+    table["HpyI"] = hypi;
+    
+    float ahi = ai + hypi;
+    table["AHI"] = ahi;
+    
+    float rdi = ahi + rerai;
+    table["RDI"] = rdi;
+
+    float longest_oas = MaxEventDurationInSec(oas);
+    float longest_cas = MaxEventDurationInSec(cas);
+    float longest_mas = MaxEventDurationInSec(mas);
+    float longest_hyps = MaxEventDurationInSec(hyps);
+    float longest_apneas = \
+      std::max(std::max(longest_oas, longest_cas),
+	       std::max(longest_oas, longest_mas));
+
+    table["OA_Longest"] = longest_oas;
+    table["CA_Longest"] = longest_cas;
+    table["MA_Longest"] = longest_mas;
+    table["Hyp_Longest"] = longest_hyps;
+    table["Apnea_Longest"] = longest_apneas;
+    table["LongestApnea"] = longest_apneas;
+
+    float mean_oas = MeanEventDurationInSec(oas);
+    float mean_cas = MeanEventDurationInSec(cas);
+    float mean_mas = MeanEventDurationInSec(mas);
+    float mean_hyps = MeanEventDurationInSec(hyps);
+    float mean_apneas = (mean_oas + mean_cas + mean_mas) / 3;
+    table["OA_Mean"] = mean_oas;
+    table["CA_Mean"] = mean_cas;
+    table["MA_Mean"] = mean_mas;
+    table["Hyp_Mean"] = mean_hyps;
+    table["Apnea_Mean"] = mean_apneas;
+    
+    float num_oas_rem = NumEventsWithStage(oas, stages, 4);
+    float num_cas_rem = NumEventsWithStage(cas, stages, 4);
+    float num_mas_rem = NumEventsWithStage(mas, stages, 4);    
+    float num_apneas_rem = num_oas_rem + num_cas_rem + num_mas_rem;
+    float num_hyps_rem = NumEventsWithStage(hyps, stages, 4);    
+    table["OA_TimesHappenedREM"] = num_oas_rem;
+    table["CA_TimesHappenedREM"] = num_cas_rem;
+    table["MA_TimesHappenedREM"] = num_mas_rem;
+    table["Apnea_TimesHappenedREM"] = num_apneas_rem;
+    table["Hyp_TimesHappenedREM"] = num_hyps_rem;
+    
+    float num_oas_n1 = NumEventsWithStage(oas, stages, 1);
+    float num_cas_n1 = NumEventsWithStage(cas, stages, 1);
+    float num_mas_n1 = NumEventsWithStage(mas, stages, 1);    
+    float num_apneas_n1 = num_oas_n1 + num_cas_n1 + num_mas_n1;
+    float num_hyps_n1 = NumEventsWithStage(hyps, stages, 1);
+
+    float num_oas_n2 = NumEventsWithStage(oas, stages, 2);
+    float num_cas_n2 = NumEventsWithStage(cas, stages, 2);
+    float num_mas_n2 = NumEventsWithStage(mas, stages, 2);    
+    float num_apneas_n2 = num_oas_n2 + num_cas_n2 + num_mas_n2;
+    float num_hyps_n2 = NumEventsWithStage(hyps, stages, 2);
+    
+    float num_oas_n3 = NumEventsWithStage(oas, stages, 3);
+    float num_cas_n3 = NumEventsWithStage(cas, stages, 3);
+    float num_mas_n3 = NumEventsWithStage(mas, stages, 3);
+    float num_apneas_n3 = num_oas_n3 + num_cas_n3 + num_mas_n3;
+    float num_hyps_n3 = NumEventsWithStage(hyps, stages, 3);
+    
+    float num_oas_nrem = num_oas_n1 + num_oas_n2 + num_oas_n3;
+    float num_cas_nrem = num_cas_n1 + num_cas_n2 + num_cas_n3;
+    float num_mas_nrem = num_mas_n1 + num_mas_n2 + num_mas_n3;
+    float num_apneass_nrem = num_apneas_n1 + num_apneas_n2 + num_apneas_n3;
+    float num_hyps_nrem = num_hyps_n1 + num_hyps_n2 + num_hyps_n3;
+    table["OA_TimesHappenedNREM"] = num_oas_nrem;
+    table["CA_TimesHappenedNREM"] = num_cas_nrem;
+    table["MA_TimesHappenedNREM"] = num_mas_nrem;
+    table["Apnea_TimesHappenedNREM"] = num_apneass_nrem;
+    table["OA_TimesHappenedNREM"] = num_oas_nrem;
+    table["Hyp_TimesHappenedNREM"] = num_hyps_nrem;
+
+    // chart
+    //auto& resp_epochs = rets_->resp_epochs;
+    RespEpochs resp_epochs;
+    resp_epochs.oas = std::vector<float>(num_epochs, 0);
+    resp_epochs.cas = std::vector<float>(num_epochs, 0);
+    resp_epochs.mas = std::vector<float>(num_epochs, 0);
+    resp_epochs.hyps = std::vector<float>(num_epochs, 0);
+    GetRespEpochFromEvents(resp_epochs.oas, oas);
+    GetRespEpochFromEvents(resp_epochs.cas, cas);
+    GetRespEpochFromEvents(resp_epochs.mas, mas);
+    GetRespEpochFromEvents(resp_epochs.hyps, hyps);
+
+    auto& chart_resp = rets_->chart_resp;
+    chart_resp.append("OA,");
+    for (auto state : resp_epochs.oas) {
+      chart_resp.append(std::to_string(state)+',');
+    }
+    chart_resp[chart_resp.size()-1] = '\n';
+    chart_resp.append("CA,");
+    for (auto state : resp_epochs.cas) {
+      chart_resp.append(std::to_string(state)+',');
+    }
+    chart_resp[chart_resp.size()-1] = '\n';
+    chart_resp.append("MA,");
+    for (auto state : resp_epochs.mas) {
+      chart_resp.append(std::to_string(state)+',');
+    }
+    chart_resp[chart_resp.size()-1] = '\n';
+    chart_resp.append("Hypnea,");
+    for (auto state : resp_epochs.hyps) {
+      chart_resp.append(std::to_string(state)+',');
+    }
+    chart_resp[chart_resp.size()-1] = '\n';
+
+}

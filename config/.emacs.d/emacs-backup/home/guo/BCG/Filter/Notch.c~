@@ -1,0 +1,37 @@
+
+#include <stdio.h>
+
+// For Fz = 500Hz 
+
+void filter(float* y, float *x, int n, float* b, int nb, float* a, int na);
+
+void Notch(float*y, float*x, int n) {
+  float Den[] = {1.0000, 0, 0, 0, 0, 0, 0, 0, 0, 0, -0.9936};
+  float Num[] = {0.9968, 0, 0, 0, 0, 0, 0, 0, 0, 0, -0.9968};  
+  filter(y, x, n, Num, 11, Den, 11);  
+}
+
+
+void filter(float* y, float *x, int n, float* b, int nb, float* a, int na) {
+  float upper, lower;
+  upper = lower = 0;
+  for (int i=0; n-i>=0 && i<nb; i++) {
+    upper += b[i]*x[n-i];
+  }
+  for (int i=1; n-i>=0 && i<na; i++) {
+    lower += a[i]*y[n-i];
+  }
+  y[n] = upper - lower;
+}
+
+int main() {
+
+  float x[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};
+  float y[14];
+  for (int i = 0; i < 14; i++) {
+    Notch(y, x, i);
+  }
+  for (int i = 0; i < 14; i++) {
+    printf("%f\t", y[i]);
+  }
+}

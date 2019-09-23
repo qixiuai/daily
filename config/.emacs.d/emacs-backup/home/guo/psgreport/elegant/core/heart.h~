@@ -1,0 +1,112 @@
+
+#ifndef _PSG_REPORT_HEART_
+#define _PSG_REPORT_HEART_
+
+#include <algorithm>
+#include <cassert>
+#include <numeric>
+#include <string>
+#include <utility>
+//#include <cpprest/json.h>
+
+//#include "psg/util/utils.h"
+#include "psg/api/data.h"
+
+namespace psg {
+  namespace report {
+    struct Heart {
+      Heart(comm::DB& db, std::string hex_str): db{db}, hex_str{hex_str} {
+	// TODO init sleep_stages which also used in other places
+	stages = db[hex_str].stages;
+	std::vector<int> ipks = db[hex_str].ipks;
+	assert(ipks.size() > 1);
+	for (int i = 1; i < static_cast<int>(ipks.size()); i++) {
+	  float cycle = ipks[i] -ipks[i-1];
+	  float hr = 60 * 60 * 500 / cycle;
+	  hr_events.push_back(std::make_pair(ipks[i], hr));
+	}
+	stage_offset = db[hex_str].report["Report/Stage/sleep_onset"];
+      }
+
+      float MeanHRNREM() {
+	std::vector<float> hrs;
+	for (auto event : hr_events) {
+	  auto ind = event.first;
+	  auto hr  = event.second;
+	  auto epoch_id = ind / 500 / 30;
+	  if (epoch_id < stage_offset) continue;
+	  if (stages[epoch_id] == 1 ||
+	      stages[epoch_id] == 2 ||
+	      stages[epoch_id] == 3)
+	    hrs.push_back(hr);
+	}
+	auto sum = std::accumulate(hrs.begin(), hrs.end(), 0);
+	auto mean_hr = sum / hrs.size();
+	return mean_hr;
+      }
+
+      // not including wake stage
+      float MeanHR() {
+	std::vector<float> hrs;
+	for (auto event : hr_events) {
+	  auto ind = event.first;
+	  auto hr  = event.second;
+	  auto epoch_id = ind / 500 / 30;
+	  if (epoch_id < stage_offset) continue;
+	  if (stages[epoch_id] != 0)
+	    hrs.push_back(hr);
+	}
+	auto sum = std::accumulate(hrs.begin(), hrs.end(), 0);
+	auto mean_hr = sum / hrs.size();
+	return mean_hr;
+      }
+
+      float MaxHR() {
+	std::vector<float> hrs;
+	for (auto event : hr_events) {
+	  auto ind = event.first;
+	  auto hr  = event.second;
+	  auto epoch_id = ind / 500 / 30;
+	  if (epoch_id < stage_offset) continue;
+	  if (stages[epoch_id] != 0)
+	    hrs.push_back(hr);
+	}
+	auto max_hr = *std::max_element(hrs.begin(), hrs.end());
+	return max_hr;
+      }
+
+      float MinHR() {
+	std::vector<float> hrs;
+	for (auto event : hr_events) {
+	  auto ind = event.first;
+	  auto hr  = event.second;
+	  auto epoch_id = ind / 500 / 30;
+	  if (epoch_id < stage_offset) continue;
+	  if (stages[epoch_id] != 0)
+	    hrs.push_back(hr);
+	}
+	auto min_hr = *std::min_element(hrs.begin(), hrs.end());
+	return min_hr;
+      }
+	
+      void operator() () {
+	// TODO add key, val to db
+	// wait for common wrapper functions
+	std::string prefix = "Report/Heart/";
+	db[hex_str].report[prefix + "MeanHRNREM"] = MeanHRNREM();
+	db[hex_str].report[prefix + "MeanHR"]     = MeanHR();
+	db[hex_str].report[prefix + "MaxHR"]      = MaxHR();
+	db[hex_str].report[prefix + "MinHR"]      = MinHR();
+      }
+
+      std::vector<std::pair<int, float>> hr_events;
+      std::vector<int> stages;
+      int stage_offset;
+      comm::DB& db;
+      std::string hex_str;
+    };
+      
+  }
+
+}
+#endif

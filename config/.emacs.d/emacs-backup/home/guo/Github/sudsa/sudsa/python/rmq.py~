@@ -1,0 +1,28 @@
+from absl import app
+
+
+class RMQ(object):
+
+    def __init__(self, array):
+        self.array = array
+
+    def query(self, start, end):
+        if (start < end):
+            raise ValueError()
+        return self.query_impl(start, end)
+
+class RMQNaive(RMQ):
+    
+    def query_impl(self, start, end):
+        min = self.array[start]
+        for value in self.array[start+1:end]:
+            if value < min:
+                min = value
+        return min
+
+
+    
+    
+
+if __name__ == '__main__':
+    app.run()

@@ -1,0 +1,115 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import pdb
+from absl import flags
+
+FLAGS = flags.FLAGS
+
+
+stage_label={'W':0, 'R':5, 'MT':6, 'N1':1, 'N2':2, 'N3':3}
+
+epochs = 960
+
+def generate_stages(epochs):
+    def add_stages(num_epochs, stage):
+        for epoch in range(num_epochs):
+            stages.append(stage_label[stage])
+    stages = []    
+    wake_epochs = 20*2 # wake time 20min
+    add_stages(wake_epochs, 'W')
+    N1_epochs = 38 # 0.04 * epochs    19min
+    add_stages(N1_epochs, 'N1' )    
+    N2_epochs_1 = 84*2 # 84min
+    add_stages(N2_epochs_1, 'N2')
+    REM_epochs_1 = 28*2 # 28min
+    add_stages(REM_epochs_1, 'R')
+    N2_epochs_2 = 84*2 # 84min
+    add_stages(N2_epochs_2, 'N2')
+    REM_epochs_2 = 28*2 # 28min
+    add_stages(REM_epochs_2, 'R')
+    N3_epochs = 20*2 # 20min
+    add_stages(N3_epochs, 'N3')
+    N2_epochs_3 = 84*2 # 84min
+    add_stages(N2_epochs_3, 'N2')
+    REM_epochs_3 = 28*2 # 28min
+    add_stages(REM_epochs_3, 'R')
+    N2_epochs_4 = (84-15)*2 # 84min
+    add_stages(N2_epochs_4, 'N2')
+    REM_epochs_4 = (28-12)*2 # 28min
+    add_stages(REM_epochs_4, 'R')
+    return stages
+
+def generate_heart_rates(stages):
+    heart_rates = []
+    def hyperbola(x):
+        return 5/(480**2)*x*(x-960) + 75 + np.random.random()
+    for epoch in range(epochs):
+        heart_rates.append(hyperbola(epoch))
+    return heart_rates
+
+position_label = {'U':5, 'S':4, 'R':3, 'P':2, 'L':1}
+def generate_body_positions():
+    positions = []
+    for epoch in range(epochs):
+        positions.append(position_label['S'])
+    L_st = np.random.randint(120, 350)
+    for epoch in range(L_st, L_st+100):
+        positions[epoch] = position_label['L']
+    return positions
+
+def generate_SpO2():
+    so = []
+    def hyperbola(x):
+        return 5/(480**2)*x*(x-960) + 95 + np.random.random()
+    for epoch in range(epochs):
+        m = hyperbola(epoch)
+        std = np.random.random()*2
+        so.append((m-std, m+std))
+    return so
+
+def get_OA(stages):
+    data = (np.random.random(epochs)*20-18).tolist()
+    for idx, val in enumerate(data):
+        if val < 0 or stages[idx] != stage_label['R']:
+            data[idx] = 0
+    return data
+
+def write_to_csv(filepath, stages, heart_rates,
+                 body_positions, SpO2,
+                 OA, CA, MA,
+                 OH, CH, MH):
+    with open(filepath, 'w') as out:
+        header = 'Epochs,Stages,HeartRates,BodyPositions,SpO2,OA,CA,MA,OH,CH,MH\n'
+        out.write(header)
+        for epoch in range(epochs):
+            line = '{},{},{},{},{},{},{},{},{},{},{}\n'.format(
+                epoch, stages[epoch], heart_rates[epoch], body_positions[epoch],
+                SpO2[epoch], OA[epoch], CA[epoch], MA[epoch],
+                OH[epoch], CH[epoch], MH[epoch])
+            out.write(line)
+
+def generate_report():
+    epochs = list(range(960))
+    stages     = generate_stages(epochs)
+    heart_rates = generate_heart_rates(stages)
+    body_positions = generate_body_positions()
+    SpO2       = generate_SpO2()
+    OA = get_OA(stages)
+    CA = get_OA(stages)
+    MA = get_OA(stages)
+    OH = get_OA(stages)
+    CH = get_OA(stages)
+    MH = get_OA(stages)
+    write_to_csv(filepath, stages, heart_rates, body_positions,
+                 SpO2, OA, CA, MA, OH, CH, MH)
+    plt.plot(OA)
+ #   plt.plot(heart_rates)
+    plt.show()
+
+def main(filepath):
+    generate_report()
+
+if __name__ == '__main__':
+    filepath = "report.csv"
+    main(filepath)

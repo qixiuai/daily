@@ -1,0 +1,39 @@
+
+#ifndef EDFPLUS_H_
+#define EDFPLUS_H_
+
+#include <map>
+#include <vector>
+#include <string>
+
+
+class Edfplus {
+public:
+  Edfplus(const std::string filepath);
+  Edfplus(const std::string filepath, std::string signal_name);
+  static void load_signal();
+  static void load_signals();
+  Edfplus(const std::string filepath, std::vector<std::string> signal_names);
+  Edfplus(const std::vector<unsigned char>* raw);
+  
+  std::map<std::string, std::vector<int16_t>> signals;
+  std::map<std::string, int> signal_freqs;
+
+  ~Edfplus();
+  
+private:
+  void _parse_signal_freqs();
+  void _parse_signals();
+  
+  char* raw_;
+};
+
+
+
+
+
+
+
+
+#endif
+

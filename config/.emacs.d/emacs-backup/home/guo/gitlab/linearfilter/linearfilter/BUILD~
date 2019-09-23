@@ -1,0 +1,13 @@
+cc_library(
+    name = "filter",
+    hdrs = ["filter.h"],
+    deps = ["@boost"],
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "filter.dll",
+    srcs = ["filter.h"],
+    deps = ["@boost"],
+    visibility = ["//visibility:public"],
+)

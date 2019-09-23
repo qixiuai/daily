@@ -1,0 +1,44 @@
+#!/bin/env python
+import os
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+from ctypes import * #cdll
+
+if os.name == 'posix':
+    lib = cdll.LoadLibrary("shared/libNotch.so")
+elif os.name == 'nt':
+    lib = windll.LoadLibrary("shared/libNotch.dll")
+else:
+    raise Exception("Platform not detected!");
+
+def Notch(x):
+    sz = len(x)
+    x_array = (c_float * sz)(*x)
+    y = [0 for i in x];
+    y_array = (c_float * sz)(*y)
+    for i in range(sz):
+        lib.Notch(y_array, x_array, c_int(i));
+    return list(y_array);
+
+
+def main(data_file_path):
+    print(data_file_path)
+    with open(data_file_path) as file:
+        data = file.read().split('\n')[:-1]
+        x = list(map(int, data))
+        y = Notch(x)
+        t = list(range(1, len(x)+1));
+        plt.figure(figsize=(10,8))
+        plt.plot(t, x, t, y)
+        plt.show()
+        
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Apply Filters to data and Plot it')
+    parser.add_argument('--data_file',
+                        default="WuShaoxin-ECG-4.txt",
+                        help='data file path')
+    args = parser.parse_args()
+    main(args.data_file)
+
+

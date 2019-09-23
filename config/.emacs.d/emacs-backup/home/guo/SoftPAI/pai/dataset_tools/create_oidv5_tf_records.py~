@@ -1,0 +1,26 @@
+
+import numpy as np
+from absl import app
+
+data_dir = "/home/guo/data/kaggle/OpenImage2019/"
+
+class OID(object):
+
+    def __init__(self):
+        pass
+
+    def load_image(self, image_id):
+        pass
+
+    def __call__(self):
+        pass
+
+
+def main(unused_args):
+    pass
+
+
+if __name__ == "__main__":
+    app.run(main)
+
+

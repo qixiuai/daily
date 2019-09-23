@@ -1,0 +1,241 @@
+from __future__ import print_function
+import argparse
+import os
+import numpy as np
+import ipdb
+import torch
+import torch.autograd as autograd
+from torch import nn, optim
+from torch.autograd import Function
+from torch.nn import functional as F
+from torch.nn.init import xavier_normal_
+from torch.nn.init import xavier_uniform_
+from torch.nn.init import kaiming_normal_
+from torch.nn.init import kaiming_uniform_
+from torch.nn.modules import BatchNorm1d
+from torch.utils.data import Dataset, DataLoader
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from tensorboardX import SummaryWriter
+import matplotlib.pyplot as plt
+
+def get_parabola_wave(a,root1, root2):
+    num_point = 500;
+    x = np.random.uniform(0,1,num_point);
+    x.sort();
+    y = a*(x-root1)*(x-root2);
+    y = y + np.random.randn(num_point)*0.0001;
+    return (x, y)
+
+def get_parabola_wave1():
+    a, root1, root2 = 1, 0, 1
+    return get_parabola_wave(a, root1, root2);
+
+def get_parabola_wave2():
+    a, root1, root2 = 10, -0.5, 1
+    return get_parabola_wave(a, root1, root2);
+
+def get_parabola_wave3():
+    a, root1, root2 = 0.1, 0.5, 1
+    return get_parabola_wave(a, root1, root2);
+
+class WaveDataset(Dataset):
+    """
+    """
+    def __init__(self, is_train=True):
+        self.is_train = is_train;
+
+    def __len__(self):
+        num_train = 4096*8;
+        if self.is_train:
+            return num_train;
+        return int(num_train*0.2);
+
+    def __getitem__(self, ind):
+        if ind % 3 == 0:
+            x, y = get_parabola_wave1();
+            return (torch.Tensor(y),torch.Tensor(y))
+        elif ind % 3 == 1:
+            x, y = get_parabola_wave2();
+            return (torch.Tensor(y),torch.Tensor(y))
+        else:
+            x, y = get_parabola_wave3();
+            return (torch.Tensor(y),torch.Tensor(y))
+
+class VAE(nn.Module):
+    def __init__(self):
+        super(VAE, self).__init__()
+        self.fc1  = nn.Linear(500, 200)
+        self.fc21 = nn.Linear(200, 3)
+        self.fc22 = nn.Linear(200, 3)
+        self.fc3  = nn.Linear(3,  200)
+        self.fc4  = nn.Linear(200, 500)
+
+    def encode(self, x):
+        h1 = F.relu(self.fc1(x))
+        return self.fc21(h1), self.fc22(h1)
+
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = torch.exp(0.5*logvar)
+            eps = torch.randn_like(std)
+            return eps.mul(std).add_(mu)
+        else:
+            return mu
+
+    def decode(self, z):
+        h3 = F.relu(self.fc3(z))
+        return F.sigmoid(self.fc4(h3))
+
+    def forward(self, x):
+        mu, logvar = self.encode(x.view(-1, 500))
+        z = self.reparameterize(mu, logvar)
+        return self.decode(z), mu, logvar
+
+
+def backward_hook(self, grad_input, grad_output):
+    print("self.weight: ", self.weight)
+    new_grad_weight = grad_input[2]
+    ipdb.set_trace()
+#    ipdb.set_trace()
+    return (grad_input[0], grad_input[1], grad_input[2]*0);
+
+
+    
+def kaiming_normal_weights_init(m):
+    if isinstance(m, nn.Linear):
+        kaiming_normal_(m.weight.data, nonlinearity="relu");
+
+# Reconstruction + KL divergence losses summed over all elements and batch
+def loss_function(recon_x, x, mu, logvar):
+    BCE = F.binary_cross_entropy(recon_x, x.view(-1, 500), size_average=False)
+
+    # see Appendix B from VAE paper:
+    # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
+    # https://arxiv.org/abs/1312.6114
+    # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    return BCE + KLD
+
+
+def train(model, device, train_loader, optimizer, epoch, log_interval):
+    model.train()
+    train_loss = 0
+    for batch_idx, (data, _) in enumerate(train_loader):
+        data = data.to(device)
+        optimizer.zero_grad()
+        recon_batch, mu, logvar = model(data)
+        loss = loss_function(recon_batch, data, mu, logvar)
+        loss.backward()
+        train_loss += loss.item()
+        optimizer.step()
+        if batch_idx % args.log_interval == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader),
+                loss.item() / len(data)))
+
+    train_loss /= len(train_loader.dataset);
+    print('====> Epoch: {} Average loss: {:.4f}'.format(
+          epoch, train_loss))
+    return train_loss;
+
+def test(model, device, test_loader, optimizer, epoch):
+    model.eval()
+    test_loss = 0
+    with torch.no_grad():
+        for i, (data, _) in enumerate(test_loader):
+            data = data.to(device)
+            recon_batch, mu, logvar = model(data)
+            test_loss += loss_function(recon_batch, data, mu, logvar).item()
+            """
+            if i == 0:
+                n = min(data.size(0), 8)
+                comparison = torch.cat([data[:n],
+                                      recon_batch.view(args.batch_size, 1, 28, 28)[:n]])
+                save_image(comparison.cpu(),
+                         'results/reconstruction_' + str(epoch) + '.png', nrow=n)
+            """
+
+    test_loss /= len(test_loader.dataset)
+    print('====> Test set loss: {:.4f}'.format(test_loss))
+    return test_loss;
+
+
+def save_model(model):
+    torch.save(model.state_dict(), "models/model.pt")
+
+def load_model():
+    return torch.load_state_dict(torch.load("models/model.pt"))
+
+def generate_codes(code_len=3):
+    codes = []
+    ind = 0
+    for i in (0, 1):
+        for j in (0, 1):
+            for k in (0, 1):
+               codes.append((i,j,k))
+    return codes
+
+def decode_hidden_states_of_model(model):
+    device = torch.device("cuda:0")
+    codes = generate_codes()
+    code_decode = {}
+    for code in codes:
+        with torch.no_grad():
+            code_tensor = torch.tensor(code, dtype=torch.float32).to(device)
+            decode = model.decode(code_tensor)
+            code_decode[code] = decode.cpu().numpy()
+    return code_decode
+
+def hidden_code_visual(code_decode):
+    codes, decodes = code_decode.keys(), code_decode.values()
+    codes    = list(codes)
+    decodes  = list(decodes)
+    num_code = len(codes)
+    col_display = 2
+    row_display = num_code / 2
+    plt.figure(figsize=(20,10))
+    for i in range(num_code):
+        plt.subplot(row_display, col_display, i+1)
+        plt.plot(decodes[i])
+        plt.suptitle(codes[i])
+    plt.show()
+    
+
+def main(args):
+    torch.manual_seed(2018)
+    device = torch.device("cuda:0" if args.use_cuda else "cpu")
+    writer = SummaryWriter("/home/guo/AwareCore/dllogs/autoencoder/")
+    train_dataset = WaveDataset(is_train=True)
+    val_dataset   = WaveDataset(is_train=False)
+    train_loader  = DataLoader(train_dataset, batch_size=args.batch_size,
+                               shuffle=True, num_workers=12)
+    val_loader    = DataLoader(val_dataset)
+    model = VAE().to(device)
+    model.fc1.register_backward_hook(backward_hook)
+    model.apply(kaiming_normal_weights_init)
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', verbose=True)
+    for epoch in range(1, args.epochs + 1):
+        train_loss = train(model, device, train_loader, optimizer, epoch, args.log_interval)
+        test_loss  = test(model, device, val_loader, optimizer, epoch)
+        scheduler.step(train_loss)
+        writer.add_scalars("Loss", {"train": train_loss, "test": test_loss}, epoch)
+    save_model(model)
+    code_decode = decode_hidden_states_of_model(model)
+    hidden_code_visual(code_decode)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='VAE MNIST Example')
+    parser.add_argument('--batch-size', type=int, default=128, metavar='N',
+                        help='input batch size for training (default: 4096)')
+    parser.add_argument('--epochs', type=int, default=1, metavar='N',
+                        help='number of epochs to train (default: 1)')
+    parser.add_argument('--use-cuda', action='store_true', default=True,
+                        help='enables CUDA training')
+    parser.add_argument('--seed', type=int, default=1, metavar='S',
+                        help='random seed (default: 1)')
+    parser.add_argument('--log-interval', type=int, default=100, metavar='N',
+                        help='how many batches to wait before logging training status')
+    args = parser.parse_args()
+    main(args)

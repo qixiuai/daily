@@ -1,0 +1,213 @@
+#ifndef _PSG_EVENT_RESP_
+#define _PSG_EVENT_RESP_
+
+#include <cpprest/json.h>
+#include "psg/util/utils.h"
+#include "boost/circular_buffer.hpp"
+#include "psg/event/heart.h"
+
+#include "psg/api/data.h"
+
+template <class T>
+using Buffer = boost::circular_buffer<T>;
+using Event = std::pair<int, int>;
+
+namespace psg {
+    
+  class PeakDecrease {
+  public:
+    PeakDecrease() = default;
+    PeakDecrease(int dur, float decrease_percent_) {
+      dur_thres_ = dur;
+      decrease_percent_ = decrease_percent_;
+      buf_ = Buffer<float>(buffer_size_);
+      movmean = MovMean(15);
+    };
+      
+    std::vector<Event> detect_signal(const std::vector<int>* signal) {
+      std::vector<Event> events;
+      int signal_size = signal->size();
+      int event_st = 0;
+      int event_ed = 0;
+      for (int i = 0; i < signal_size; i += Fz_) {
+	// parallel 
+	auto st = signal->begin() + i;
+	auto step = Fz_ * 2;
+	auto ed = (i < signal_size - step) ? (st + step) : signal->end();
+	std::vector<float> signal_temp(st, ed);
+	std::vector<int> ipks_temp = findpeaks<std::vector<float>>(signal_temp,
+								   threshold_,
+								   min_dist_);
+	int ipk_max  = i + Fz_;
+	int ipk_st   = i;
+	int ipk_prev = 0;
+	for (int ind = 0; ind < static_cast<int>(ipks_temp.size()); ind++) {
+	  auto ipk = ipks_temp[ind];
+	  if (ipk > ipk_max) continue; // miss peaks at the signal end
+	  int ipk_cur = ipk + ipk_st;
+	  auto peak_value = (*signal)[ipk_cur];
+	  if (ipk_cur > 3000 && peak_base_ != 0) {
+	    if (peak_base_ - peak_value > peak_base_ * decrease_percent_) {
+	      if (event_st == 0) {
+		event_st = ipk_cur;
+	      }
+	    } else if (event_st != 0) {
+	      event_ed = ipk_prev;
+	      auto dur = event_ed - event_st;
+	      if (dur > dur_thres_) 
+		events.push_back(std::make_pair(event_st, event_ed));
+	      event_st = 0;
+	    }
+	    ipk_prev = ipk_cur;
+	  }
+	  peak_base_ = movmean.movMean(peak_value);
+	  // ipks.push_back(ipk + ipk_st);
+	}
+      }
+      return events;
+    }
+      
+  private:
+    float decrease_percent_ = 0.9;
+      
+    int Fz_  = 100;
+    int dur_thres_ = 1000; // 10s [not fit for chest and abdomen]
+    int buffer_size_ = 100 * 20; // a little large
+    int min_dist_    = 100;
+    float threshold_ = 0.75;
+    Buffer<float> buf_;
+    float peak_base_ = 0;
+    float peak_mean_;
+
+    MovMean movmean;
+  };
+
+  // [a1, b1]
+  // [a2, b2]
+  float intercept(const Event& event1, const Event& event2) {
+    auto min_a = std::min(event1.first,  event2.first);
+    auto min_b = std::min(event1.second, event2.second);
+      
+    if (min_a > min_b) return 0;
+    return (min_b - min_a) / (event1.second - event1.first);
+  }
+    
+  // assume events is sorted
+  bool is_contains_event(const Events& events, const Event& query, float thres) {
+    for (const auto event : events) {
+      auto ratio = intercept(query, event);
+      if (ratio >= thres) {
+	return true;
+      }
+    }
+    return false;
+  }    
+
+    
+  using Events = std::vector<Event>;
+  std::tuple<Events, Events, Events>
+  detect_apnea(const std::vector<int>* temp,
+	       const std::vector<int>* chest,
+	       const std::vector<int>* abdomen) {
+    PeakDecrease temp_decr_(1000, 0.9);
+    PeakDecrease chest_decr_(0, 0.9);
+    PeakDecrease abdomen_decr_(0, 0.9);
+    auto temp_events = temp_decr_.detect_signal(temp);
+    auto chest_events = chest_decr_.detect_signal(chest);
+    auto abdomen_events = abdomen_decr_.detect_signal(abdomen);
+      
+    Events oa_events, ca_events, ma_events;
+    for (const auto temp_evt : temp_events) {
+      auto full_happened_in_chest   = is_contains_event(chest_events, temp_evt, 0.85);
+      auto full_happened_in_abdomen = is_contains_event(abdomen_events, temp_evt, 0.85);
+      if (full_happened_in_chest && full_happened_in_abdomen) {
+	ca_events.push_back(temp_evt);
+      }
+      auto partial_happened_in_chest   = is_contains_event(chest_events, temp_evt, 0.45);
+      auto partial_happened_in_abdomen = is_contains_event(abdomen_events, temp_evt, 0.45);
+
+      if (partial_happened_in_chest && partial_happened_in_abdomen) {
+	ma_events.push_back(temp_evt);
+      }
+
+      auto happened_in_chest   = is_contains_event(chest_events, temp_evt, 0.1);
+      auto happened_in_abdomen = is_contains_event(abdomen_events, temp_evt, 0.1);
+      if (!happened_in_chest && !happened_in_abdomen) {
+	oa_events.push_back(temp_evt);
+      }
+    }
+
+    return std::make_tuple(oa_events, ca_events, ma_events);
+  }
+
+
+    
+
+    
+  Events detect_hypnea(const std::vector<int>* pressure,
+		       const std::vector<int>* spo2) {
+    PeakDecrease press_decr_(1000, 0.3);
+    auto press_events = press_decr_.detect_signal(pressure);
+      
+    PeakDecrease spo2_decr_(1000, 0.03);
+    auto spo2_events = spo2_decr_.detect_signal(spo2);
+      
+    Events hyp_events;
+    for (auto press_evt : press_events) {
+      auto happened_in_spo2 = is_contains_event(spo2_events, press_evt, 0.85);
+      if (happened_in_spo2) {
+	hyp_events.push_back(press_evt);
+      }	
+    }
+    return hyp_events;
+  }               
+    
+  void add_events_to_db(comm::Events& db_events,
+			const Events& events,
+			std::string signal_name) {
+    for (auto p : events) {
+      auto st = p.first;
+      auto ed = p.second;
+      comm::Event event(st, ed, signal_name);
+      db_events[event.to_string()] = event;
+    }
+  }
+    
+  void add_resp_event(comm::DB& db, std::string hex_str, EdfPlus* edf) {
+    // extract leg_signal
+    /*
+      auto temp     = get_signal_from_db(db, hex_str, "Resp temp");
+      auto pressure = get_signal_from_db(db, hex_str, "Resp pressure");
+      auto chest    = get_signal_from_db(db, hex_str, "Resp chest");
+      auto abdomen  = get_signal_from_db(db, hex_str, "Resp abdomen");
+      auto spo2     = get_signal_from_db(db, hex_str, "SpO2 finger");
+    */
+    auto temp     = edf->parseSingleSignal(9);
+    auto pressure = edf->parseSingleSignal(10);
+    auto chest    = edf->parseSingleSignal(5);
+    auto abdomen  = edf->parseSingleSignal(6);
+    auto spo2     = edf->parseSingleSignal(0);
+    
+    auto hyp_events = detect_hypnea(pressure, spo2);
+    auto apnea_events = detect_apnea(temp, chest, abdomen);
+    auto oa_events = std::get<0>(apnea_events);
+    auto ca_events = std::get<1>(apnea_events);
+    auto ma_events = std::get<2>(apnea_events);
+    std::cerr << "Detected oa events size: "  << oa_events.size() << '\n';
+    std::cerr << "Detected ca events size: "  << ca_events.size() << '\n';
+    std::cerr << "Detected ma events size: "  << ma_events.size() << '\n';
+    std::cerr << "Detected hyp events size: " << hyp_events.size() << '\n';
+    add_events_to_db(db[hex_str].events.resp_oa, oa_events, "Resp temp");
+    add_events_to_db(db[hex_str].events.resp_ca, ca_events,
+		     "Resp temp,Resp chest,Resp abdomen");
+    add_events_to_db(db[hex_str].events.resp_ma, ma_events,
+		     "Resp temp,Resp chest,Resp abdomen");
+    add_events_to_db(db[hex_str].events.resp_hyp, hyp_events,
+		     "Resp pressure");
+  }
+
+}
+
+
+
+#endif

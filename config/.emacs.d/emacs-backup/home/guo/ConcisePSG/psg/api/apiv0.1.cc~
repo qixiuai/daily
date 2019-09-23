@@ -1,0 +1,164 @@
+
+#include <unordered_map>
+#include <vector>
+#include <string>
+
+#include <cpprest/json.h>
+#include "absl/strings/str_join.h"
+
+#include "psg/api/api.h"
+
+namespace psg {
+  namespace api {
+    
+    typedef std::vector<std::string> NamesType;
+
+    struct Names {
+      std::string header;
+      NamesType rows;
+      NamesType cols;
+      NamesType keys;
+      Names() = default;
+      Names(std::string header, NamesType row_names, NamesType col_names) {
+	this->rows = row_names;
+	this->cols = col_names;
+	for (auto row_name : row_names) {
+	  for (auto col_name : col_names) {
+	    keys.push_back(absl::StrCat(header, "/", row_name, "/", col_name));
+	  }
+	}
+      }
+      Names(std::string header, NamesType row_names) {
+	for (auto row_name : row_names) {
+	  keys.push_back(absl::StrCat(header, "/", row_name));
+	}
+      }
+    };
+  
+    Names stage("Report/Stage", {"WKTIB", "REM", "N1", "N2", "N3", "SleepEfficency", "SleepOnset"},
+		{"LastingTime", "TimeInBedRatio", "TotalSleepTatio", "Latency",
+		 "FromCloseLight", "FromSleepOnset"});
+  
+    Names spo2("Report/Spo2", {"LowestTIB", "LowestTST", "MeanTIB", "MeanREM", "MeanNREM",
+	  "LowestRespRelated", "NOD", "ODI"}, {"Wake", "REM", "NREM", "Total"});
+  
+    Names resp("Report/Resp", {"AHI", "ReraIndex", "AI", "HI", "RDI", "DurOfLongestApnea", "Apnea",
+	  "OA", "CA", "MA", "Hypopnea"}, {"TimesHappenedTotal", "TimesHappenedRem",
+	  "TimesHappenedNREM", "LongestDur", "MeanDur"});
+
+    Names body_pos("Report/BodyPosition",
+		   {"S", "L", "R", "P", "U"},
+		   {"Duration", "CA", "MA", "OA", "Hyp", "AHI", "Rera", "RDI", "Desat"});
+
+    Names heart("Report/Heart", {"MeanHRNEM", "MeanHR", "MaxHR", "MinHR"});
+  
+    Names leg("Report/Leg", {"NumPlm", "NumPlmWake", "PlmIndex", "PlmWakeIndex"});
+  
+    typedef std::unordered_map<std::string, std::vector<float>> CharData;
+
+    Api::Api() {
+      // report: add single key - value pair
+      web::json::value db;
+      std::vector<std::string> keys;
+      auto append_keys = [&](Names names) {
+	keys.insert(keys.end(), names.keys.begin(), names.keys.end());
+      };
+      append_keys(stage);
+      append_keys(spo2);
+      append_keys(resp);
+      append_keys(body_pos);
+      append_keys(heart);
+      append_keys(leg);
+      for (auto key : keys) {
+	db[key] = 2018;
+	//ucout << key << '\n';
+      }            
+
+      // add char data
+      int num_epoch = 300;
+      auto add_chart_minmax_data = [&](std::string name) {
+	for (int epoch_id = 0; epoch_id < num_epoch; epoch_id++) {
+	  std::string key_parent =
+	    "Report/Chart/" + name + "/" + std::to_string(epoch_id) + "/";
+	  auto min = key_parent + "Min";
+	  auto max = key_parent + "Max";
+	  db[min] = 10;
+	  db[max] = 11;
+	}
+      };
+      add_chart_minmax_data("HR");
+      add_chart_minmax_data("Spo2");
+      add_chart_minmax_data("OA");
+      add_chart_minmax_data("CA");
+      add_chart_minmax_data("MA");
+      add_chart_minmax_data("HYP");
+      
+      auto add_chart_state_data = [&](std::string name) {
+	for (int epoch_id = 0; epoch_id < num_epoch; epoch_id++) {
+	  std::string key = "Report/Chart/" + name + "/" + std::to_string(epoch_id);
+	  db[key] = 12;
+	}
+      };
+      add_chart_state_data("Pos");
+      add_chart_state_data("Stage");
+
+      // add event data
+      // Events: Stage, Spo2, OA, CA, MA, HYP
+      auto add_event_state_data = [&](std::string name) {
+	for (int epoch_id = 0; epoch_id < num_epoch; epoch_id++) {
+	  std::string key = "Events/" + name + "/" + std::to_string(epoch_id);
+	  db[key] = 13;
+	}
+      };
+      add_event_state_data("Stage");
+      
+      auto add_events_data = [&](std::string name) {
+	int num_event = 10;
+	for (int epoch_id = 0; epoch_id < num_epoch; epoch_id++) {
+	  for (int event_id = 0; event_id < num_event; event_id++) {
+	    std::string key_parent = "Events/" + name + "/" +
+	      std::to_string(epoch_id) + "/" + std::to_string(event_id);
+	    auto start = key_parent + "Start";
+	    auto end   = key_parent + "End";
+	    db[start] = 14;
+	    db[end]   = 15;
+	  }
+	}
+      };
+      add_events_data("Spo2");
+      add_events_data("OA");
+      add_events_data("CA");
+      add_events_data("MA");
+      add_events_data("HYP");
+      
+      this->db = db;
+    }
+
+    
+    web::json::value Api::get(const web::json::value& client) {
+      web::json::value ret = web::json::value::object();
+      auto client_obj = client.as_object();
+      for (auto iter = client_obj.begin(); iter != client_obj.end(); iter++) {
+	auto key = iter->first;
+	ret[key] = this->db[key];
+      }
+      return ret;
+    }
+
+    void Api::post(const web::json::value& client) {
+      auto client_obj = client.as_object();
+      for (auto iter = client_obj.begin(); iter != client_obj.end(); iter++) {
+	auto key = iter->first;
+	auto val = iter->second;
+	this->db[key] = val;
+      }
+    }
+  };
+    
+  struct Event {
+    int start; // index
+    int end;
+    std::string name; // stage: N1/N2/N3/Wake/REM // spo2 deduction
+  };
+
+} // end namespace psg

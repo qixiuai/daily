@@ -1,0 +1,12 @@
+
+#include <iostream>
+//#include "tensorflow/c/c_api.h"
+#include "c_api.h"
+using namespace std;
+
+int main() {
+  std::cout << TF_VERSION() << std::endl;
+  
+  return 0;
+}
+

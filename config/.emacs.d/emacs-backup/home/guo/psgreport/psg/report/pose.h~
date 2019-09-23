@@ -1,0 +1,376 @@
+
+#ifndef _PSG_REPORT_POSE_
+#define _PSG_REPORT_POSE_
+
+#include <vector>
+#include <string>
+//#include <cpprest/json.h>
+#include <utility>
+//#include "psg/util/utils.h"
+#include "psg/api/data.h"
+
+//using namespace web;
+
+namespace psg {
+  namespace report {
+
+    struct Pose {
+      using Event = comm::Event;
+      Pose(comm::DB& db, std::string hex_str): db{db}, hex_str{hex_str} {
+	// normalize event index to 1Hz
+	stages = db[hex_str].stages;
+	pose_signal = db[hex_str].pose_signal;
+	for (auto p_evt : db[hex_str].events.resp_oa) {
+	  oa_events.push_back(p_evt.second);
+	}
+	std::sort(oa_events.begin(), oa_events.end(),
+		  [](comm::Event evt1, comm::Event evt2){
+		    return evt1.start < evt2.start;
+		  });
+	for (auto p_evt : db[hex_str].events.resp_ca) {
+	  ca_events.push_back(p_evt.second);
+	}
+	std::sort(ca_events.begin(), ca_events.end(),
+		  [](comm::Event evt1, comm::Event evt2){
+		    return evt1.start < evt2.start;
+		  });	
+	for (auto p_evt : db[hex_str].events.resp_ma) {
+	  ma_events.push_back(p_evt.second);
+	}
+	std::sort(ma_events.begin(), ma_events.end(),
+		  [](comm::Event evt1, comm::Event evt2){
+		    return evt1.start < evt2.start;
+		  });
+	for (auto p_evt : db[hex_str].events.resp_hyp) {
+	  hyp_events.push_back(p_evt.second);
+	}	
+	std::sort(hyp_events.begin(), hyp_events.end(),
+		  [](comm::Event evt1, comm::Event evt2){
+		    return evt1.start < evt2.start;
+		  });
+	for (auto p_evt : db[hex_str].events.resp_hyp) {
+	  rera_events.push_back(p_evt.second);
+	}
+	std::sort(rera_events.begin(), oa_events.end(),
+		  [](comm::Event evt1, comm::Event evt2){
+		    return evt1.start < evt2.start;
+		  });
+	for (auto p_evt : db[hex_str].events.spo2) {
+	 desat_events.push_back(p_evt.second);
+	}
+	std::sort(desat_events.begin(), desat_events.end(),
+		  [](comm::Event evt1, comm::Event evt2){
+		    return evt1.start < evt2.start;
+		  });
+	stage_offset = db[hex_str].report["Report/Stage/sleep_onset"];
+      }
+
+      float DurationWithState(float state) {
+	int sum = 0;
+	int st = 1 * 30 * stage_offset;
+	for (int i = st; i < static_cast<int>(pose_signal.size()); i++) {
+	  float sample = pose_signal[i];
+
+	  // stage not wake
+	  int epoch_id = i / 30;
+	  if (sample == state && stages[epoch_id] != 0)
+	    sum += 1;
+	}
+	return sum / 60; // minutes
+      }
+	
+      float S_Duration() {
+	return DurationWithState(1);
+      }
+
+      float L_Duration() {
+	return DurationWithState(2);
+      }
+
+      float R_Duration() {
+	return DurationWithState(3);
+      }
+	
+      float P_Duration() {
+	return DurationWithState(4);
+      }
+
+      float U_Duration() {
+	return DurationWithState(5);
+      }
+
+      // events with 1Hz normalized index and filtered out sleep onset
+      float NumEventsWithPose(const std::vector<comm::Event>& events,
+			      float pose_state) {
+	int sum = 0;
+	for (auto it = events.begin(); it != events.end(); it++) {
+	  auto st = it->start;
+	  auto ed = it->end;
+	  for (int i = st; i < ed; i++) {
+	    if (pose_signal[i] == pose_state) {
+	      sum += 1;
+	      break;
+	    }
+	  }
+	}
+	return sum;
+      }
+	
+      float S_OA() {
+	return NumEventsWithPose(oa_events, 1);
+      }
+
+      float S_CA() {
+	return NumEventsWithPose(ca_events, 1);
+      }
+
+      float S_MA() {
+	return NumEventsWithPose(ma_events, 1);
+      }
+	
+      float S_HYP() {
+	return NumEventsWithPose(hyp_events, 1);
+      }
+	
+      float S_AHI() {
+	auto hour = S_Duration() / 60;
+	auto num = S_OA() + S_CA() + S_MA() + S_HYP();
+	return num / hour;
+      }
+
+      float S_RERA() {
+	return NumEventsWithPose(rera_events, 1);
+      }
+
+      float S_RDI() {
+	auto hour = S_Duration() / 60;
+	auto num = S_OA() + S_CA() + S_MA() + S_HYP() + S_RERA();
+	return num / hour;
+      }	
+
+      float S_Desat() {
+	return NumEventsWithPose(desat_events, 1);
+      }	
+
+      float L_OA() {
+	return NumEventsWithPose(oa_events, 2);
+      }
+
+      float L_CA() {
+	return NumEventsWithPose(ca_events, 2);
+      }
+
+      float L_MA() {
+	return NumEventsWithPose(ma_events, 2);
+      }
+	
+      float L_HYP() {
+	return NumEventsWithPose(hyp_events, 2);
+      }
+	
+      float L_AHI() {
+	auto hour = L_Duration() / 60;
+	auto num = L_OA() + L_CA() + L_MA() + L_HYP();
+	return num / hour;
+      }
+
+      float L_RERA() {
+	return NumEventsWithPose(rera_events, 2);
+      }
+
+      float L_RDI() {
+	auto hour = L_Duration() / 60;
+	auto num = L_OA() + L_CA() + L_MA() + L_HYP() + L_RERA();
+	return num / hour;
+      }	
+
+      float L_Desat() {
+	return NumEventsWithPose(desat_events, 2);
+      }		
+
+
+      float R_OA() {
+	return NumEventsWithPose(oa_events, 3);
+      }
+
+      float R_CA() {
+	return NumEventsWithPose(ca_events, 3);
+      }
+
+      float R_MA() {
+	return NumEventsWithPose(ma_events, 3);
+      }
+	
+      float R_HYP() {
+	return NumEventsWithPose(hyp_events, 3);
+      }
+	
+      float R_AHI() {
+	auto hour = R_Duration() / 60;
+	auto num = R_OA() + R_CA() + R_MA() + R_HYP();
+	return num / hour;
+      }
+
+      float R_RERA() {
+	return NumEventsWithPose(rera_events, 3);
+      }
+
+      float R_RDI() {
+	auto hour = R_Duration() / 60;
+	auto num = R_OA() + R_CA() + R_MA() + R_HYP() + R_RERA();
+	return num / hour;
+      }	
+
+      float R_Desat() {
+	return NumEventsWithPose(desat_events, 3);
+      }			
+
+
+      float P_OA() {
+	return NumEventsWithPose(oa_events, 4);
+      }
+
+      float P_CA() {
+	return NumEventsWithPose(ca_events, 4);
+      }
+
+      float P_MA() {
+	return NumEventsWithPose(ma_events, 4);
+      }
+	
+      float P_HYP() {
+	return NumEventsWithPose(hyp_events, 4);
+      }
+	
+      float P_AHI() {
+	auto hour = P_Duration() / 60;
+	auto num = P_OA() + P_CA() + P_MA() + P_HYP();
+	return num / hour;
+      }
+
+      float P_RERA() {
+	return NumEventsWithPose(rera_events, 4);
+      }
+
+      float P_RDI() {
+	auto hour = P_Duration() / 60;
+	auto num = P_OA() + P_CA() + P_MA() + P_HYP() + P_RERA();
+	return num / hour;
+      }	
+
+      float P_Desat() {
+	return NumEventsWithPose(desat_events, 4);
+      }		
+
+      float U_OA() {
+	return NumEventsWithPose(oa_events, 5);
+      }
+
+      float U_CA() {
+	return NumEventsWithPose(ca_events, 5);
+      }
+
+      float U_MA() {
+	return NumEventsWithPose(ma_events, 5);
+      }
+	
+      float U_HYP() {
+	return NumEventsWithPose(hyp_events, 5);
+      }
+	
+      float U_AHI() {
+	auto hour = U_Duration() / 60;
+	auto num = U_OA() + U_CA() + U_MA() + U_HYP();
+	return num / hour;
+      }
+
+      float U_RERA() {
+	return NumEventsWithPose(rera_events, 5);
+      }
+
+      float U_RDI() {
+	auto hour = U_Duration() / 60;
+	auto num = U_OA() + U_CA() + U_MA() + U_HYP() + U_RERA();
+	return num / hour;
+      }	
+
+      float U_Desat() {
+	return NumEventsWithPose(desat_events, 5);
+      }		
+	
+      void operator() () {
+	std::string prefix = "Report/Pose/";
+	db[hex_str].report[prefix + "S_Duration"] = S_Duration();
+	db[hex_str].report[prefix + "L_Duration"] = L_Duration();
+	db[hex_str].report[prefix + "R_Duration"] = R_Duration();
+	db[hex_str].report[prefix + "P_Duration"] = P_Duration();
+	db[hex_str].report[prefix + "U_Duration"] = U_Duration();
+
+	db[hex_str].report[prefix + "S_OA"] = S_OA();
+	db[hex_str].report[prefix + "L_OA"] = L_OA();
+	db[hex_str].report[prefix + "R_OA"] = R_OA();
+	db[hex_str].report[prefix + "P_OA"] = P_OA();
+	db[hex_str].report[prefix + "U_OA"] = U_OA();
+	  
+	db[hex_str].report[prefix + "S_CA"] = S_CA();
+	db[hex_str].report[prefix + "L_CA"] = L_CA();
+	db[hex_str].report[prefix + "R_CA"] = R_CA();
+	db[hex_str].report[prefix + "P_CA"] = P_CA();
+	db[hex_str].report[prefix + "U_CA"] = U_CA();
+
+	db[hex_str].report[prefix + "S_MA"] = S_MA();
+	db[hex_str].report[prefix + "L_MA"] = L_MA();
+	db[hex_str].report[prefix + "R_MA"] = R_MA();
+	db[hex_str].report[prefix + "P_MA"] = P_MA();
+	db[hex_str].report[prefix + "U_MA"] = U_MA();
+
+	db[hex_str].report[prefix + "S_HYP"] = S_HYP();
+	db[hex_str].report[prefix + "L_HYP"] = L_HYP();
+	db[hex_str].report[prefix + "R_HYP"] = R_HYP();
+	db[hex_str].report[prefix + "P_HYP"] = P_HYP();
+	db[hex_str].report[prefix + "U_HYP"] = U_HYP();
+
+	db[hex_str].report[prefix + "S_AHI"] = S_AHI();
+	db[hex_str].report[prefix + "L_AHI"] = L_AHI();
+	db[hex_str].report[prefix + "R_AHI"] = R_AHI();
+	db[hex_str].report[prefix + "P_AHI"] = P_AHI();
+	db[hex_str].report[prefix + "U_AHI"] = U_AHI();
+
+	db[hex_str].report[prefix + "S_RERA"] = S_RERA();
+	db[hex_str].report[prefix + "L_RERA"] = L_RERA();
+	db[hex_str].report[prefix + "R_RERA"] = R_RERA();
+	db[hex_str].report[prefix + "P_RERA"] = P_RERA();
+	db[hex_str].report[prefix + "U_RERA"] = U_RERA();
+
+	db[hex_str].report[prefix + "S_RDI"] = S_RDI();
+	db[hex_str].report[prefix + "L_RDI"] = L_RDI();
+	db[hex_str].report[prefix + "R_RDI"] = R_RDI();
+	db[hex_str].report[prefix + "P_RDI"] = P_RDI();
+	db[hex_str].report[prefix + "U_RDI"] = U_RDI();
+
+	db[hex_str].report[prefix + "S_Desat"] = S_Desat();
+	db[hex_str].report[prefix + "L_Desat"] = L_Desat();
+	db[hex_str].report[prefix + "R_Desat"] = R_Desat();
+	db[hex_str].report[prefix + "P_Desat"] = P_Desat();
+	db[hex_str].report[prefix + "U_Desat"] = U_Desat();
+      }
+
+      std::vector<comm::Event> oa_events;
+      std::vector<comm::Event> ca_events;
+      std::vector<comm::Event> ma_events;
+      std::vector<comm::Event> hyp_events;
+      std::vector<comm::Event> rera_events;
+      std::vector<comm::Event> desat_events;
+
+      // int freq = 1;
+      int stage_offset;
+      std::vector<int> stages;
+      std::vector<int> pose_signal;
+	
+      comm::DB& db;
+      std::string hex_str;
+    };
+  }
+}
+
+#endif

@@ -1,0 +1,185 @@
+
+#include <algorithm>
+#include <utility>
+#include <cpprest/json.h>
+
+
+#include "absl/strings/match.h"
+
+namespace psg {
+  namespace report {
+    namespace stage {
+      using namespace web;
+      using JsonKeyVal = std::pair<std::string, float>;
+      
+      std::vector<JsonKeyVal> filter(const json::value& db, std::string prefix) {
+	int prefix_len = prefix.size();
+	std::vector<JsonKeyVal> pairs;
+	auto db_obj = db.as_object();
+	for (auto iter = db_obj.begin(); iter != db_obj.end(); iter++) {
+	  auto key = iter->first;
+	  if (absl::StartsWith(key, prefix)) {
+	    auto val = iter->second;
+	    auto pair = std::make_pair<std::string, int>(key.substr(prefix_len), val);
+	    pairs.push_back(pair);
+	  }
+	}
+	return pairs;
+      }
+
+
+      /**
+       * @param stage: continuous epochs with stage labels
+       *               0: wake 1: N1, 2: N2, 3: N3, 4: REM
+       * return miniutes
+       */
+      float GetMinutesOfSepcificStage(const std::vector<int>& stages, int target) {
+	int num_target_epoch = 0;
+	std::for_each(stages.begin(), stages.end(), [](int label){
+	    if (label == target)
+	      num_target_epoch += 1;
+	  });
+	return num_target_epoch * 0.5;
+      }
+
+      // sleep onset: continuous 5 minutes sleep
+      int GetSleepOnsetOffset(const std::vector<int>& stages) {
+	int last_epochs = 0;
+	int thres = 10; // 10 epochs == 5 minutes
+	int start_epoch_id = 0;
+	for (int id = 0; id < stages.size(); id++) {
+	  int label = stages[id];
+	  if (label == 0) {
+	    last_epochs = 0;
+	    continue;
+	  }
+	  if (last_epochs == 0)
+	    start_epoch_id = id;
+	  last_epochs += 1;
+	  if (last_epochs >= thres)
+	    break;
+	}
+	return start_epoch_id;
+      }
+ 
+      float GetLatencyOfSepcificStage(const std::vector<int>& stages,
+				      int target,
+				      int start_epoch_id) {
+	int offset = 0;
+	auto iter_start = stages.begin() + start_epoch_id;
+	auto iter_end   = stages.end();
+	std::for_each(iter_start, iter_end, [](int label){
+	    if (label != target)
+	      offset += 1;
+	  });
+	return (start_epoch_id + offset + 1) * 0.5;
+      }
+      
+      float WakeTIB_LastingTime(const std::vector<int>& stages) {
+	return GetMinutesOfSepcificStage(stages, 0);
+      }
+
+      float N1_LastingTime(const std::vector<int>& stages) {
+	return GetMinutesOfSepcificStage(stages, 1);
+      }
+
+      float N2_LastingTime(const std::vector<int>& stages) {
+	return GetMinutesOfSepcificStage(stages, 2);
+      }
+
+      float N3_LastingTime(const std::vector<int>& stages) {
+	return GetMinutesOfSepcificStage(stages, 1);
+      }
+      
+      float REM_LastingTime(const std::vector<int>& stages) {
+	return GetMinutesOfSepcificStage(stages, 4);
+      }      
+      
+      float TSTTIB_LastingTime(float tst, float tib) {
+	return tst / tib;
+      }
+
+      
+      
+      
+      struct Stage {
+	Stage(json::value& db): db{db} {}
+	
+	void operator() () {
+	  // get stages from db
+	  std::string key_prefix = "Events/Stage";
+	  int key_prefix_len = key_prefix.size();
+	  std::vector<JsonKeyVal> stage_pairs = filter(db, key_prefix);
+	  std::sort(stage_pairs.begin(), stage_pairs.end(),
+		    [](JsonKeyVal p1, JsonKeyVal p2){
+		      return std::stoi(p1->first) < std::stoi(p2->first);
+		    });
+	  std::vector<int> stages;
+	  std::for_each(stage_pairs.begin(), stage_pairs.end(), [](JsonKeyVal p) {
+	      stages.push_back(p->second); });
+	  
+	  // generate Report/Stage/*
+
+	  // col LastingTime
+	  auto waketib_time = WakeTIB_LastingTime(stages);
+	  auto n1_time      = N1_LastingTime(stages);
+	  auto n2_time      = N2_LastingTime(stages);
+	  auto n3_time      = N3_LastingTime(stages);
+	  auto rem_time     = REM_LastingTime(stages);
+	  add_to_db("WKTIB_LastingTime", waketib);
+	  add_to_db("N1_LastingTime",      n1_time);
+	  add_to_db("N2_LastingTime",      n2_time);
+	  add_to_db("N3_LastingTime",      n3_time);
+	  add_to_db("REM_LastingTime",     rem_time);
+	  
+	  auto tst_time = n1_time + n2_time + n3_time + rem_time;
+	  auto tib_time = waketib + tst_time;
+	  add_to_db("TSTTIB_LastingTime",  TSTTIB_LastingTime(tst_time, tib_time));
+
+	  // col TimeInBedRatio
+	  add_to_db("WKTIB_TimeInBedRatio", waketib_time / tib_time);
+	  add_to_db("REM_TimeInBedRatio",   rem_time     / tib_time);
+	  add_to_db("N1_TimeInBedRatio",    n1_time      / tib_time);
+	  add_to_db("N2_TimeInBedRatio",    n2_time      / tib_time);
+	  add_to_db("N3_TimeInBedRatio",    n3_time      / tib_time);
+
+	  // col TotalSleepRatio
+	  add_to_db("REM_TotalSleepRatio",   rem_time     / tst_time);
+	  add_to_db("N1_TotalSleepRatio",    n1_time      / tst_time);
+	  add_to_db("N2_TotalSleepRatio",    n2_time      / tst_time);
+	  add_to_db("N3_TotalSleepRatio",    n3_time      / tst_time);
+
+	  // col FromCloseLight
+	  int offset = GetSleepOnsetOffset(stages);
+	  auto sleep_onset_time     = (offset+1) * 0.5;
+	  auto n1_from_close_light  = GetLatencyOfSepcificStage(stages, 1, offset);
+	  auto n2_from_close_light  = GetLatencyOfSepcificStage(stages, 2, offset);
+	  auto n3_from_close_light  = GetLatencyOfSepcificStage(stages, 3, offset);
+	  auto rem_from_close_light = GetLatencyOfSepcificStage(stages, 4, offset);	
+	  add_to_db("SleepOnset_FromCloseLight", sleep_onset_time);
+	  add_to_db("N1_FromCloseLight",        n1_from_close_light);
+	  add_to_db("N2_FromCloseLight",        n2_from_close_light);
+	  add_to_db("N3_FromCloseLight",        n3_from_close_light);
+	  add_to_db("REM_FromCloseLight",        rem_from_close_light);
+
+	  // col FromSleep
+	  add_to_db("N1_FromSleep",  n1_from_close_light - sleep_onset_time);
+	  add_to_db("N2_FromSleep",  n2_from_close_light - sleep_onset_time);
+	  add_to_db("N3_FromSleep",  n3_from_close_light - sleep_onset_time);
+	  add_to_db("REM_FromSleep", rem_from_close_light - sleep_onset_time);
+      }
+
+	void add_to_db(std::string key_suffix, float val) {
+	  std::string prefix = "Report/Stage/";
+	  std::string key = prefix + key_suffix;
+	  db[key] = val;
+	}
+	
+	json::value& db;
+      };
+      
+    }
+
+  }
+
+}

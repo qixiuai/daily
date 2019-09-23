@@ -1,0 +1,35 @@
+
+import numpy as np
+import tensorflow as tf
+
+from tensorflow.keras.layers import BatchNormalization
+
+from absl import app
+
+class Model(tf.Module):
+
+    def __init__(self):
+        self.bn = BatchNormalization()
+
+    @tf.function
+    def __call__(self, x):
+        return self.bn(x)
+
+def main(unused_args):
+    del unused_args
+    model = Model()
+    x = np.random.randn(10,5)
+    print(model(x))
+    #tf.saved_model.save(model, "saved_models")
+    signatures = {"serving_default" : model.__call__.get_concrete_function(tf.TensorSpec((None,5), tf.float32))}
+    tf.saved_model.save(model, "saved_models", signatures=signatures)
+    #tf.keras.experimental.export_saved_model(model, "keras_models")
+    imported = tf.saved_model.load("saved_models")
+    bn_loaded = imported.signatures['serving_default']
+    print(bn_loaded(tf.constant(x)))
+    
+if __name__ == "__main__":
+    app.run(main)
+
+
+

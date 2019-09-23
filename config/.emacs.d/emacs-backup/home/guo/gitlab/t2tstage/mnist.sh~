@@ -1,0 +1,21 @@
+#!/bin/bash
+
+root_dir=/home/guo/data/mnist
+data_dir=${root_dir}/t2t_data
+model_dir=${root_dir}/t2t_model
+#rm -rf ${data_dir}
+rm -rf ${model_dir}
+
+usr_dir=/home/guo/t2tstage/stage
+
+t2t-trainer \
+    --t2t_usr_dir=${usr_dir} \
+    --tfdbg=True \
+    --generate_data \
+    --problem=custom_mnist \
+    --data_dir=${data_dir} \
+    --output_dir=${model_dir} \
+    --model=basic_fc_relu \
+    --hparams_set=basic_fc_small \
+    --train_steps=1000000 \
+    --eval_steps=300

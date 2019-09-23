@@ -1,0 +1,39 @@
+""" dataset base """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+#import tensorflow as tf
+
+class Dataset(object):
+
+    def __init__(self, name):
+        self._database_root = "/home/guo/physio/database/"
+        self._tmp_root ="/home/guo/physio/tmp_data/"
+        self._name = name
+
+    @property
+    def tmp_dir(self):
+        # check whether tmp dir exists
+        return self._tmp_root + self._name
+
+    @property
+    def data_dir(self):
+        return self._database_root + self._name
+
+    @property
+    def available_channels(self):
+        pass
+
+    def channel_to_local(self):
+        pass
+    
+    def generate_dataset(self):
+        pass
+
+    def __call__(self, channels, train=True, class_balanced=True):
+        pass
+
+
+    

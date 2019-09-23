@@ -1,0 +1,173 @@
+function rand() {
+  return Math.random();
+}
+
+var time = new Date();
+
+var signal = {
+  x: [],
+  y: [],
+  xaxis: 'xaxis',
+  yaxis: 'yaxis',
+  mode: 'lines',
+  line: {
+    color: '#80CAF6',
+    shape: 'lines',
+  },
+  name: "Signal",
+}
+
+var movdev = {
+  x: [],
+  y: [],
+  xaxis: 'x_movdev',
+  yaxis: 'y_movdev',
+  mode: 'lines',
+  line: {color: '#DC143C'}, // crimson
+  name: "MovDev",
+};
+
+var movmax = {
+  x: [],
+  y: [],
+  xaxis: 'x_movmax',
+  yaxis: 'y_movmax',
+  mode: 'lines',
+  line: {color: '#000000'}, // black
+  name: "MovMax",
+};
+
+var duration = {
+  x: [],
+  y: [],
+  xaxis: 'x_duration',
+  yaxis: 'y_duration',
+  mode: 'lines',
+  line: {color: '#0000FF'}, // blue
+  name: "Duration",
+};
+
+var peak = {
+  x: [],
+  y: [],
+  xaxis: 'x_peak',
+  yaxis: 'y_peak',
+  mode: 'lines',
+  line: {color: '#FFA500'}, // orange
+  name: "Peak",
+};
+
+var hr = {
+  x: [],
+  y: [],
+  xaxis: 'x_hr',
+  yaxis: 'y_hr',
+  mode: 'lines',
+  line: {color: '#008000'}, // green
+  name: "Heart Rate",
+};
+
+var layout = {
+  xaxis: {
+    type: 'date',
+    showticklabels: true,
+    domain: [0, 1]
+  },
+  yaxis:{domain:[0, 0.19]},
+  xaxis2: {
+    type: 'date',
+    anchor: 'yaxis2',
+    domain: [0, 1],    
+  },
+  yaxis2: {
+    anchor: 'xaxis2',
+    domain:[0.21, 0.39],
+  },   
+  xaxis3: {
+    type: 'date',
+    anchor: 'yaxis3',
+    domain: [0, 1],    
+  },
+  yaxis3: {
+    anchor: 'xaxis3',
+    domain:[0.41, 0.59],
+  }, 
+  xaxis4: {
+    type: 'date',
+    anchor: 'yaxis4',
+    domain: [0, 1],    
+  },
+  yaxis4: {
+    anchor: 'xaxis4',
+    domain:[0.61, 0.79],
+  },
+  xaxis5: {
+    type: 'date',
+    anchor: 'yaxis5',
+    domain: [0, 1],    
+  },
+  yaxis5: {
+    anchor: 'xaxis5',
+    domain:[0.81, 0.91],
+  },
+  xaxis6: {
+    type: 'date',
+    anchor: 'yaxis6',
+    domain: [0, 1],    
+  },
+  yaxis6: {
+    anchor: 'xaxis6',
+    domain:[0.91, 1],
+  },     
+};
+
+var data = [signal, movdev, movmax, duration, peak, hr];
+
+Plotly.plot('graph', data, layout);
+
+var cnt = 0;
+
+var interval = setInterval(function() {
+
+  var time = new Date();
+  var olderTime = time.setSeconds(time.getSeconds() - 10);
+  var futureTime = time.setSeconds(time.getSeconds() + 10);
+
+  var secondsView = {
+        xaxis: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis2: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis3: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis4: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis5: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis6: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },    
+  };
+  
+//  Plotly.relayout('graph', secondsView, [0,1,2,3,4,5]);
+  
+  var update = {
+    x: [[time], [time], [time], [time], [time],  [time]],
+    y: [[rand()], [rand()], [rand()],[rand()],[rand()], [rand()]],
+  };
+  
+  Plotly.extendTraces('graph', update, [0,1,2,3,4,5]);
+
+  if(cnt === 100) clearInterval(interval);
+}, 1000);

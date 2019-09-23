@@ -1,0 +1,30 @@
+#ifndef DISMAX_ENTROPY
+#define DISMAX_ENTROPY
+
+#include <iostream>
+
+namespace DisMax {
+
+class EntropyBuffer : public Buffer<int> {
+ public:
+ EntropyBuffer():Buffer<int>(){}
+ EntropyBuffer(int buffer_size):Buffer<int>(buffer_size){}
+  
+  double getRMSE() {
+    double rmse = 0;
+    double m = this->getMean();
+    std::cout << "H mean:" << m << std::endl;
+    int val;
+    for (int i = 0; i < this->size; i++) {
+      val = (*this)[i];
+      rmse += std::pow(val-m, 2);
+    }
+    rmse = std::sqrt(rmse);
+    return rmse;
+  }
+
+};
+}
+
+#endif
+ 

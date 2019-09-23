@@ -1,0 +1,77 @@
+
+#ifndef SIGNAL_LIB_H_
+#define SIGNAL_LIB_H_
+
+#include <cmath>
+#include <vector>
+
+namespace bcg {
+
+namespace signal {
+
+  float signal_energy(const std::vector<float>& signal, int start, int end) {
+    // [start, end)
+    float energy = 0;
+    for (int ind = start; ind < end; ind++) {
+      float sample = signal[ind];
+      energy += sample*sample;
+    }
+    return energy;
+  }
+  
+  std::vector<float> diff_signal(const std::vector<float>& signal) {
+    std::vector<float> diffs;
+    int len = signal.size();
+    for (int ind = 1; ind < len; ind++) {
+      float prev_sample = signal[ind-1];
+      float curr_sample = signal[ind];
+      float diff = curr_sample - prev_sample;
+      diffs.push_back(diff);
+    }
+    return diffs;
+  }
+
+  template <typename Container, typename T=typename Container::value_type>
+  std::vector<T>
+  diff(const Container& signal) {
+    std::vector<T> diffs;
+    int len = signal.size();
+    for (int ind = 1; ind < len; ind++) {
+      float prev_sample = signal[ind-1];
+      float curr_sample = signal[ind];
+      float diff = curr_sample - prev_sample;
+      diffs.push_back(diff);
+    }
+    return diffs;
+  }  
+
+  template <typename Container>
+  float mean(const Container& signal) {
+    float sum = 0;
+    int n = signal.size();
+    for (const auto& value : signal) {
+      sum += value;
+    }
+    float m = sum / n;
+    return m;
+  }
+    
+  template <typename Container>
+  float std(const Container& signal) {
+    float cum = 0;
+    float m = mean(signal);
+    int n = signal.size();
+    for (const auto& value : signal) {
+      cum += (value - m) * (value - m);
+    }
+    float ret = std::sqrt(cum/n);
+    return ret;
+  }
+  
+}
+
+}
+
+#endif
+
+

@@ -1,0 +1,87 @@
+
+""" SHHS Dataset Interface """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import pdb
+import untangle
+import numpy as np
+
+from glob import glob
+from edfplus import Edfplus
+from sklearn.model_selection import train_test_split
+
+SHHS_DIR = "/home/guo/physio/database/SHHSSleepData/shhs/polysomnography/"
+SHHS_EDF_DIR = SHHS_DIR + "edfs/"
+SHHS_ANNO_DIR = SHHS_DIR + "annotations-events-nsrr/"
+
+
+def load_labels_from_xml(xml_path, fs=125):
+    obj = untangle.parse(xml_path)
+    stages = []
+    for event in obj.PSGAnnotation.ScoredEvents.ScoredEvent:
+        if "Stages" in event.EventType.cdata:
+            dur = event.Duration
+            label = int(event.EventConcept.cdata.split('|')[1])
+            stages.extend([label]*dur*fs)
+    return stages
+
+
+class SHHS(object):
+
+    def __init__(self, mode="Train"):
+        self.mode = mode
+                
+    def generate_dataset(self):
+        subjects = glob(SHHS_EDF_DIR+"*.edf", recursive=True)
+        train, test = train_test_split(subjects, test_size=0.4, shuffle=True, random_state=2019)
+        val, test = train_test_split(test, test_size=0.5, shuffle=True, random_state=2019)
+        if self.mode == "Train":
+            self.subjects = train
+        elif self.mode == "Validation":
+            self.subjects = val
+        elif self.mode == "Test":
+            self.subjects = test
+        else:
+            raise Exception("unexpected mode")        
+
+    def _load_subject_data(self, edf_path, channels=[]):
+        edf = Edfplus(edf_path)
+        if not channels:
+            channels = list(edf.signal_names)
+        # filter and resample signal into 200Hz
+        return np.stack([list(edf.signals[c]) for c in channels], axis=2)
+
+    def _load_subject_label(self, edf_path):
+        edf_file = os.path.basename(edf_path)
+        label_file = edf_file[:-3] + "xml"
+        category = edf_file[:5]
+        label_path = os.path.join(SHHS_ANNO_DIR, category, label_file)
+        return load_labels_from_xml(label_path)
+
+    def load_subject(self, edf_path, channels):
+        data = self._load_subject_data(edf_path, channels)
+        labels = self._load_subject_label(edf_path)
+        return (data, labels)
+
+    def __call__(self, epoch_size=1, channels=[]):
+        for subject in self.subjects:
+            data, labels = self.load_subject(subject, channels)
+            num_samples = len(labels)
+            num_epochs = int(num_samples / epoch_size)
+            for epoch_id in range(num_epochs):
+                start = epoch_id * epoch_size
+                end = start + epoch_size
+                yield data[start:end,:], labels[start:end]
+
+
+if __name__ == '__main__':
+    xml_path = SHHS_ANNO_DIR + "shhs1/" + "shhs1-202327-nsrr.xml"
+    print(xml_path)
+    labels = load_labels_from_xml(xml_path)
+
+
+

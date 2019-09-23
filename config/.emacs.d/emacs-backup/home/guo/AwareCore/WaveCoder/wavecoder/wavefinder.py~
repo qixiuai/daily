@@ -1,0 +1,68 @@
+from utils import *
+
+
+class WaveFinder(object):
+    """
+    """
+    def __init__(self):
+        '''
+        '''
+        pass
+
+    def wavefind(signal):
+        pass
+
+    def wavefind_realtime(value):
+        pass
+
+
+class PeakDetecter(object):
+    """
+    """
+    def __init__(self, window_size=15, disp_threshold=0.1):
+        self.n              = 1;
+        self.signal_movmean = 0;
+        self.signal_disp    = 0;
+#        self.disp_movmean   = 0;
+#        self.disp_movdisp   = 0;
+        self.ws = window_size;
+        self.disp_threshold = disp_threshold;
+        self.signal_segment = [];
+        
+    def detect_peak(self, signal):
+        is_peaks   = [];
+        peaks_type = [];
+        for val in signal:
+            is_peak, peak_type = self.detect_peak_realtime(val);
+            is_peaks.append(is_peak);
+            peaks_type.append(peak_type);
+        return is_peaks,peaks_type;
+
+    def detect_peak_realtime(self, value):
+        n = self.n + 1;
+        if n > self.ws:
+            n = n - 1;
+        signal_movmean = (self.signal_movmean * (self.n - 1) + value) / n;
+        signal_disp  = (value - signal_movmean) / (signal_movmean+0.000001);
+#        disp_movmean = (self.disp_movmean * (self.n - 1) + signal_disp) / n;
+#        disp_movdisp = signal_disp - disp_movmean;
+        if np.abs(signal_disp) > self.disp_threshold:
+            if signal_disp > 0:
+                return (True, "+");
+            else:
+                return (True, "-");
+        return (False, "");
+
+if __name__ == "__main__":
+    t = np.linspace(0,1, 100000);
+    cycle_coeff = 10;
+    signal = np.sin(2*np.pi*cycle_coeff*t) + np.cos(2*np.pi*3*cycle_coeff*t);
+    signal = np.sin(2*np.pi*cycle_coeff*t);    
+    peak_detecter = PeakDetecter();
+    plt.figure(figsize=(20,10));
+    plt.subplot(211);
+    plt.plot(t, signal);
+    plt.subplot(212);
+    is_peaks, type_peaks = peak_detecter.detect_peak(signal);
+    plt.plot(t, np.asarray(is_peaks));
+    plt.show();

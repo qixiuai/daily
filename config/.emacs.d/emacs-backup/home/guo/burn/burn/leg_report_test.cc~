@@ -1,0 +1,56 @@
+
+#include "burn/leg_report.h"
+
+#include "burn/common_type.h"
+
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+
+std::vector<int> load_stages() {
+  std::string label_path = \
+    "/home/guo/data/sleepstage/database/ISRUC_Sleep/subgroupI/1/1_1.txt";
+  std::ifstream in(label_path);
+  std::vector<int> stages;
+  std::string line;
+  int counter = 0;
+  while (in >> line) {
+    int label = std::stoi(line);
+    if (label == 5)
+      label = 4;
+    stages.push_back(label);
+    counter += 1;
+    // load 740 epochs
+    if (counter >= 740)
+      break;
+  }
+  return stages;
+}
+
+std::vector<burn::Event> load_plms() {
+   std::string path = \
+    "/home/guo/burn/data/plms.txt";
+  std::ifstream in(path);
+  std::vector<burn::Event> plms;
+  std::string line;
+  while (in >> line) {
+    int start = std::stoi(line);
+    plms.push_back(burn::Event(start, start+2000));
+  }
+  return plms;
+}
+
+int main() {
+  auto stages = load_stages();
+  auto plms = load_plms();
+
+  int sleep_onset_epoch_id = 11;
+  burn::LegReport::Args args(stages, plms, sleep_onset_epoch_id);
+  burn::LegReport::Rets rets;
+  burn::LegReport leg_report(&rets, &args);
+  leg_report.Run();
+     
+  return 0;
+}
+

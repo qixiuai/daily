@@ -1,0 +1,49 @@
+
+#include "tensorflow/restapi/server.h"
+
+DataServer::DataServer() {}
+
+DataServer::DataServer(utility::string_t url): m_listener(url) {
+  m_listener.support(methods::GET,  std::bind(&DataServer::handle_get,    this, std::placeholders::_1));
+  m_listener.support(methods::POST, std::bind(&DataServer::handle_post,   this, std::placeholders::_1));
+  m_listener.support(methods::DEL,  std::bind(&DataServer::handle_delete, this, std::placeholders::_1));
+}
+
+DataServer::~DataServer() {
+  // release resources
+}
+
+void DataServer::handle_error(pplx::task<void>& t) {
+  try {
+    t.get();
+  }
+  catch(...) {
+    fprintf(stderr, "from handle error\n");
+  }
+}
+
+void DataServer::handle_get(http_request message) {
+  ucout << message.to_string() << endl;
+  message.reply(status_codes::OK, message.to_string());
+  return;
+}
+
+void DataServer::handle_post(http_request message) {
+  ucout << message.to_string() << endl;
+  ucout << "Key: " << message.extract_json().get()["Key"] << endl;
+  auto data = message.extract_vector().get();
+  for (int i = 0; i < data.size(); i++) {
+    ucout << data[i] << '\t';
+  }
+  ucout << '\n';
+  ucout << "data size: " << data.size() << '\n';
+  message.reply(status_codes::OK, message.to_string());
+  return;
+}
+
+void DataServer::handle_delete(http_request message) {
+  ucout << message.to_string() << endl;
+  message.reply(status_codes::OK, message.to_string());
+  return;
+}
+

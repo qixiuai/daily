@@ -1,0 +1,45 @@
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+load(
+    "//tensorflow:tensorflow.bzl",
+    "tf_cc_binary",
+    "tf_copts",
+)
+
+tf_cc_binary(
+    name = "server",
+    srcs = ["main.cc", "server.cc", "server.h"],
+    copts = tf_copts() + ["-std=c++17", "-fpermissive", "-fexceptions"],
+    linkopts = ["-lm", "-lpthread", "-lrt", "-lboost_system",
+                "-lcrypto", "-lssl", "-lcpprest"],
+    deps = [
+#        "//tensorflow/core:core_cpu",
+#        "//tensorflow/core:framework",
+#        "//tensorflow/core:lib",
+#        "//tensorflow/core:protos_all_cc",
+#        "//tensorflow/core:tensorflow",
+#        "//tensorflow/cc:cc_ops",
+    ],
+)
+
+tf_cc_binary(
+    name = "client",
+    srcs = ["client.cc"],
+    copts = tf_copts() + ["-std=c++17", "-fpermissive", "-fexceptions"],
+    linkopts = ["-lm", "-lpthread", "-lrt", "-lboost_system",
+                "-lcrypto", "-lssl", "-lcpprest"],
+    deps = [
+#        "//tensorflow/core:core_cpu",
+#        "//tensorflow/core:framework",
+#        "//tensorflow/core:lib",
+#        "//tensorflow/core:protos_all_cc",
+#        "//tensorflow/core:tensorflow",
+#        "//tensorflow/cc:cc_ops",
+    ],
+)
+

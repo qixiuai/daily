@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Expriments</title>
+</head>
+<body>
+
+  <center>
+  <div> 
+ <p>1、传感器放在人正后脑勺下面，中间隔着大枕头</p>
+<video width="400" height="300" controls>
+  <source src="正后脑勺.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>2、人侧躺着，与传感器中间隔着大枕头</p>
+<video width="400" height="300" controls>
+  <source src="侧面.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>3、人正躺着，与传感器直接接触</p>
+<video width="400" height="300" controls>
+  <source src="直接正面.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>4、人侧躺着，与传感器直接接触</p>
+<video width="400" height="300" controls>
+  <source src="直接侧面.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>5、传感器直接放在人脖子下面</p>
+<video width="400" height="300" controls>
+  <source src="压在脖子下.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>6、侧躺，中间隔着小枕头</p>
+<video width="400" height="300" controls>
+  <source src="侧躺脖子小枕头.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>7、传感器直接放在在脖子下面</p>
+<video width="400" height="300" controls>
+  <source src="直接压在脖子下面.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>8、传感器放在小枕头下面</p>
+<video width="400" height="300" controls>
+  <source src="压在枕头下面.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>9、人趴在小枕头上，传感器放在枕头下面</p>
+<video width="400" height="300" controls>
+  <source src="趴着放在上面.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+
+<div>
+ <p>10、最后测的无注释</p>
+<video width="400" height="300" controls>
+  <source src="最后测的无注释.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+</center>
+
+</html>

@@ -1,0 +1,51 @@
+""" model runner """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+
+import os
+import tensorflow as tf
+import gin
+
+from tensorflow.keras.callbacks import TensorBoard, BaseLogger
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers.schedules import ExponentialDecay
+
+from flake.datasets import get_dataset
+from flake.all_models import DeepFeatureNet
+
+import pdb
+
+@gin.configurable
+class Trainer(object):
+
+    def __init__(self):
+        self.tensorboard = TensorBoard(log_dir="/home/guo/data/sleepstage/logs/",
+                                       write_graph=True,
+                                       histogram_freq=1,
+                                       write_images=True,
+                                       update_freq="epoch",
+                                       profile_batch=0)
+        #self.loss_history = LossHistory()
+        self.learning_rate = ExponentialDecay(initial_learning_rate=1e-4,
+                                              decay_steps=100,
+                                              decay_rate=0.99)
+
+    def run(self):
+        dataset, _ = get_dataset()
+        batch_size= 32#512
+        dataset = dataset.shuffle(buffer_size=batch_size*100).batch(batch_size)
+        model = DeepFeatureNet
+        adam = Adam(learning_rate=self.learning_rate)
+        model.compile(loss="categorical_crossentropy",
+                      optimizer=adam,
+                      metrics=["accuracy"])
+        callbacks = [self.tensorboard]
+        #callbacks = []
+        model.fit(dataset, epochs=2, callbacks=callbacks)
+        tf.keras.experimental.export_saved_model(
+            model, "/home/guo/data/sleepstage/saved_models", serving_only=True)
+
+

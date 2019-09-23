@@ -1,0 +1,30 @@
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+
+#include "edfplus.h"
+
+using namespace std;
+
+int main() {
+  std::string edf_path = "/home/guo/gitlab/psg_test.edf";
+  ifstream in(edf_path, ios::binary);
+  in.seekg(0, in.end);
+  int length = in.tellg();
+  in.seekg(0, in.beg);
+  
+  char* raw = new char[length];
+  in.read(raw, length);
+  //  cerr << raw.size() << '\n';
+
+  std::vector<unsigned char> vec;
+  vec.reserve(length);
+  for (int i = 0; i < length; i++) {
+    vec.push_back(raw[i]);
+  }
+  EdfPlus edf(vec )
+  delete[] raw;
+  return 0;
+}

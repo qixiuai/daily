@@ -1,0 +1,3 @@
+circular : circular_buffer.cc
+	clang++ $< -std=c++17 -stdlib=libc++  -g -o $@
+#	clang++ $< -std=c++17 -stdlib=libc++ -L/home/guo/Github/llvm_svn/build/lib -g -o $@

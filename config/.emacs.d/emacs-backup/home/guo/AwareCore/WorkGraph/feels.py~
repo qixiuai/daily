@@ -1,0 +1,38 @@
+from __future__ import print_function, division
+
+from graphviz import Digraph
+
+dot = Digraph(comment="Self", format='jpeg')
+#node_attr={'shape':'plaintext'}
+print(dot)
+
+dot.node('A', 'self evaluation')
+dot.node('B', 'advantage')
+dot.node('C', 'disadvantage')
+dot.node('D', 'occupation')
+# add edges
+dot.edges(['AB', 'AC', 'AD'])
+
+#Advantage
+dot.node('E', 'deep learning')
+dot.node('F', 'compiler')
+dot.node('G', 'high performance computing')
+dot.edges(['BG', 'BE', 'BF'])
+
+#Disadvantage
+dot.node('I', 'deep learning')
+dot.node('H', 'signal processing')
+dot.node('J', 'doman knowledge')
+dot.edges(['CI', 'CH', 'CJ'])
+
+#Occupation
+dot.node('K', 'algorithm scientist')
+dot.edges(['DK'])
+dot.node('L', 'group leader')
+dot.edges(['KL'])
+
+dot.graph_attr['rankdir'] = 'LR'
+#dot.edge_attr.update(arrowhead='vee', arrowsize='2')
+
+dot.render('output/self', view=True)
+

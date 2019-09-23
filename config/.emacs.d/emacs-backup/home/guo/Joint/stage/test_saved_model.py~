@@ -1,0 +1,66 @@
+
+import tensorflow as tf
+from model import DeepStageNet
+from isruc import RawIsruc
+from absl import app
+
+data_dir = "/home/guo/Joint/stage/"
+
+@tf.function
+def train_step(input, target, model, loss_fn, optimizer):
+    with tf.GradientTape() as tape:
+        pred = model(input)
+        loss = loss_fn(target, pred)
+        variables = model.trainable_variables
+        grads = tape.gradient(loss, variables)
+        optimizer.apply_gradients(zip(grads, variables))
+
+
+def main(unused_args):
+    del unused_args
+    train_isruc = RawIsruc(mode='train')
+    model = DeepStageNet()
+    examples = []
+    labels = []
+    optimizer = tf.keras.optimizers.Adam()
+    loss_fn = tf.keras.losses.SparseCategoricalCrossentropy()
+    train_dataset = tf.data.Dataset.from_generator(train_isruc, (tf.float32, tf.int64))
+    BATCH_SIZE = 1
+    BUFFER_SIZE = 10 * BATCH_SIZE
+    train_dataset = train_dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE, drop_remainder=False)
+    for example, target in train_dataset.take(1):
+        train_step(example, target, model, loss_fn, optimizer)
+        ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
+        ckpt_dir = data_dir + "ckpts"
+        manager = tf.train.CheckpointManager(ckpt, ckpt_dir, max_to_keep=20)
+        ckpt.restore(manager.latest_checkpoint)
+
+    examples = []
+    labels = []
+    preds = []
+    for id, (example, label) in enumerate(train_isruc()):
+        examples.append(example)
+        labels.append(label)
+        example = example.reshape(1,6000,5)
+        pred = model(tf.constant(example, dtype=tf.float32))
+        preds.append(pred.numpy().tolist())
+        if id > 10:
+            break
+    print(preds)
+    print(labels)
+
+    tf.keras.experimental.export_saved_model(model, "saved_model_test", serving_only=True)
+    """
+    imported = tf.saved_model.load("saved_models")
+    imported = imported.signatures['serving_default']
+    preds_imported = []
+    for example in examples:
+        example = example.reshape(1,6000,5)
+        pred = imported(tf.constant(example, dtype=tf.float32)).numpy()
+        preds_imported.append(pred)
+    print(preds_imported)
+    print(labels)
+    """
+    
+if __name__ == '__main__':
+    app.run(main)

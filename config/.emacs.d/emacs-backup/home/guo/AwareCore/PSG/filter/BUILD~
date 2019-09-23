@@ -1,0 +1,8 @@
+
+cc_library(
+    name = "filter",
+    srcs = ["detrend.cc"],
+    hdrs = ["filter.h", "detrend.h"],
+    deps = ["//utils:utils", "//io:io"],
+    visibility = ["//visibility:public"]
+)

@@ -1,0 +1,23 @@
+
+import numpy as np
+import tensorflow as tf
+
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import Input, Dense, Conv1D, MaxPooling1D
+from tensorflow.keras.layers import BatchNormalization, Dropout, Flatten
+from tensorflow.keras.layers import Concatenate
+
+class ConvBlock(Layer):
+    pass
+
+
+def get_basic_model():
+    inputs = Input(shape=(200,))
+    x = inputs
+    #x = Dense(units=50, activation="relu")(x)
+    #x = Dropout(0.5)(x)
+    #x = Dense(units=50, activation="relu")(x)
+    x = Dropout(0.5)(x)
+    outputs = Dense(units=1, activation="sigmoid")(x)
+    return Model(inputs, outputs)

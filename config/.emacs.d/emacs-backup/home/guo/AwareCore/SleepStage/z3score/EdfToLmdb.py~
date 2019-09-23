@@ -1,0 +1,227 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+
+import os
+import pyedflib
+import pandas as pd
+import numpy as np
+
+import pdb
+import traceback
+
+import dateutil
+import lmdb
+
+from dateutil.parser import parse
+from scipy.io import loadmat
+from scipy.signal import resample_poly
+from scipy.signal import lfilter, decimate
+from scipy.signal import stft
+from multiprocessing import Pool
+from glob import glob
+
+from absl import app
+from absl import flags
+from absl import logging
+
+FLAGS = flags.FLAGS
+flags.DEFINE_string("data_dir", "/home/guo/AwareCore/SleepStage/database/capslpdb/",
+                    "database directory")
+
+flags.DEFINE_string("lmdb_name", "/home/guo/AwareCore/SleepStage/lmdbs/capslpdb_lmdb",
+                    "LMDB name")
+
+logging.set_verbosity(logging.INFO)
+
+
+def signal_stft(signal):
+    """
+    signal is downsampled from original with 100Hz
+    Zxx: (freqs, time)
+    """
+    sig_len = len(signal)
+    if sig_len < 30*100:
+        try:
+            signal = np.concatenate((signal, np.asarray([signal[-1]]*(30*100 - sig_len))))
+        except:
+            print(signal)
+            return np.zeros((32,32))
+    freq,t, Zxx = stft(signal, fs=100, window="hamming", nperseg=128, noverlap=30);
+    assert(t.shape[0] == 32);
+    Zxx = Zxx[0:32, 0:32];
+    return np.abs(Zxx);
+
+def bandpass(signal, signal_type):
+    """
+        EEG [0.3 45]
+        EOG [0.3 12]
+        window based order 50 FIR
+        """
+    B = loadmat("coeff/{}_bandpass_b.mat".format(signal_type))['Num'].flatten()
+    A = [1]
+    return lfilter(B, A, signal)
+
+def downsample100(signal, freq):
+    """
+    down sample from signal with 500 Hz to 100Hz
+    """
+    if freq == 512:
+        up, down = 25, 128
+    elif freq == 256:
+        up, down = 25, 64
+    elif freq == 128:
+        up, down = 25, 32
+    elif freq == 100:
+        return signal
+    elif freq == 200:
+        up, down = 1, 2
+    else:
+        raise Exception("Unexpected freq " + str(freq))
+    return resample_poly(signal, up=up, down=down)
+
+def load_edf(filepath):
+    meta_data = {}
+    try:
+        with pyedflib.EdfReader(filepath) as f:
+            signal_names   = f.getSignalLabels()
+            signal_samples = f.getNSamples()
+            signal_freqs   = f.getSampleFrequencies()
+            start_time     = f.getStartdatetime()
+            meta_data['start_time'] = start_time
+            meta_data['names']      = []
+            meta_data['freqs']      = signal_freqs
+            meta_data['Nsamples']   = signal_samples
+            signals = []
+            selected_signals = []
+            eeg_candidate_names = ['C4-A1', 'C4A1', 'C3-A2', 'C3A2'] # C4 - A1
+            eog_candidate_names = ['ROC-LOC', 'EOG-R', 'ROC-A2']#, 'ROC', 'EOG dx']
+            for name in eeg_candidate_names:
+                if name in signal_names:
+                    selected_signals.append(name)
+                    break
+            for name in eog_candidate_names:
+                if name in signal_names:
+                    selected_signals.append(name)
+                    break
+            if len(selected_signals) < 2:
+                logging.debug(filepath + " not have all target signals or have weired signal names")
+                return {}
+            for name in selected_signals:
+                index = signal_names.index(name)
+                meta_data['names'].append(name)
+                signal = f.readSignal(index)
+                if name in eeg_candidate_names:
+                    signal_bp = bandpass(signal, 'EEG')
+                elif name in eog_candidate_names:
+                    signal_bp = bandpass(signal, 'EOG')
+                else:
+                    raise Exception("Un expected signal name " + name)
+                freq = signal_freqs[index]
+                signal_ds = downsample100(signal_bp, freq)
+                signals.append(signal_ds)
+            meta_data['signals'] = signals
+    except Exception as e:
+        print(e)
+        logging.debug(traceback.format_exc())
+        logging.debug(os.path.basename(filepath) + " may be broken")
+    return meta_data
+
+def load_label(filepath):
+    stages = ['SLEEP-REM', 'SLEEP-S0', 'SLEEP-S1', 'SLEEP-S2', 'SLEEP-S3', 'SLEEP-S4']
+    skiprows = 21
+    df = pd.read_table(filepath, skiprows=skiprows)
+    #event_index = df.columns.tolist().index('Event')
+    while ('Event' not in df.columns):
+        skiprows -= 1
+        print(filepath)
+        df = pd.read_table(filepath, skiprows=skiprows)
+    mask = []
+    for event in df['Event'].tolist():
+        event = str(event)
+        if event[:5] == 'SLEEP':
+            mask.append(True)
+        else:
+            mask.append(False)
+    df = df[mask]
+    return df
+
+def calc_index(signal_start_time, label_start_time):
+    delta = label_start_time - signal_start_time
+    secs  = delta.seconds
+    start_index = secs * 100
+    end_index   = start_index + 30 * 100
+    return (start_index, end_index)
+
+# example format: ((channel=2, width=32, height=32), label)
+def make_example(meta_data, label_start_time, stage):
+    stage_encoder = {'W':0, 'S1':1, 'S2':2, 'S3':3, 'S4':3, 'R':4}
+    # C4-A1, ROC-LOC
+    channel, time, freq = 2, 32, 32
+    arr = np.zeros((channel, time, freq))
+    label = stage_encoder[stage]
+    signal_st_time = meta_data['start_time']
+    ind_st, ind_ed = calc_index(signal_st_time, label_start_time)
+    for chn in range(2):
+        data = meta_data['signals'][chn]
+        segment = data[ind_st:ind_ed]
+        if len(segment) == 0:
+            print("{} {}".format(signal_st_time, label_start_time))
+        x = signal_stft(segment)
+        arr[chn] = x
+    return arr, label
+
+def make_examples(meta_data, df):
+    num_examples = df.shape[0]
+    examples = []
+    for i in range(num_examples):
+        label = df.iloc[i]
+        stage = label['Sleep Stage']
+        if stage == 'MT':
+            continue
+        lb_st_time = dateutil.parser.parse(label['Time [hh:mm:ss]'])
+        if  'Duration[s]' in label.keys():
+            duration = label['Duration[s]']
+        elif 'Duration [s]' in label.keys():
+            duration = label['Duration [s]']
+        else:
+            logging.info("Unexpected Duration column name " + "".join(df.columns))
+        assert(duration == 30)
+        example = make_example(meta_data, lb_st_time, stage)
+        examples.append(example)
+    return examples
+    
+def save_to_lmdb(examples, filename, lmdb_name):
+    map_size = 2*32*32*4*len(examples)*1024
+    env = lmdb.open(lmdb_name, map_size=map_size)
+    with env.begin(write=True) as txn:
+        for (ind, example) in enumerate(examples):
+            key = filename + '_' + str(ind) + '_' + 'x'
+            txn.put(key.encode('ascii'), example[0])
+            key = filename + '_' + str(ind) + '_' + 'y'
+            txn.put(key.encode('ascii'), bytes(example[1]))
+
+def add_edf_to_lmdb(edfpath, lmdb):
+    logging.debug("Processing " + edfpath)
+    meta_data = load_edf(edfpath)
+    if len(meta_data) == 0 or len(meta_data['names']) == 0:
+        return
+    label_file = edfpath[:-3] + 'txt'
+    df = load_label(label_file)
+    examples = make_examples(meta_data, df)
+    save_to_lmdb(examples, edfpath, lmdb)
+
+def process_edf(file):
+    add_edf_to_lmdb(file, FLAGS.lmdb_name)
+    
+def main(argv):
+    del argv
+    files = glob(FLAGS.data_dir + "*.edf")
+#    process_edf(files[0])
+#    return
+    with Pool(12) as p:
+        p.map(process_edf, files)
+        p.join()
+    
+if __name__ == '__main__':
+    app.run(main)

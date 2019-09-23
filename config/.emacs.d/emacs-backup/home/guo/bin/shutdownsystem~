@@ -1,0 +1,11 @@
+#!/bin/bash
+
+hour=$(date +"%H")
+min=$(date +"%M")
+echo $hour
+
+if [ $hour -gt 20 ] && [ $min -gt 20 ]
+then
+    echo $hour $min
+    echo "shutdown -h now"
+fi

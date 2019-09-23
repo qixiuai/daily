@@ -1,0 +1,184 @@
+import React, { Component } from 'react';
+import './Insight.css';
+
+class Control extends Component {
+  render() {
+  return (
+      <div className="Control" >
+      <button className="Control-button" onClick={this.props.onClick}>
+        {this.props.name}
+      </button>
+      </div>
+  );
+  }
+}
+
+class ControlPannel extends Component {
+  render() {
+    return (
+	<div className="ControlPannel">
+	<Control name={"Backward"} onClick={this.props.onClickBackward} />
+	<Control name={"Start"}    onClick={this.props.onClickStart}    />
+	<Control name={"Stop"}     onClick={this.props.onClickStop}     />
+	<Control name={"Forward"}  onClick={this.props.onClickForward}  />
+	</div>
+    );
+  }
+}
+
+class Variable extends Component {
+  render() {
+    let button_type = this.props.selected ? "blue-button" : "white-button";
+    return (
+	<div className="Variable">
+	<button className={button_type} onClick={this.props.onClick}>
+	  {this.props.name}
+        </button>
+	</div>
+    );
+  }
+}
+
+class VariablePannel extends Component {  
+  renderVariable(variable_name) {
+    return (
+	<Variable name={variable_name}
+                  selected={this.props.variables[variable_name]}
+                  onClick={ () => this.props.onClick(variable_name) }
+	/>
+    );
+  }  
+  render() {
+    return (
+	<div className="VariablePannel">
+	  {this.renderVariable("Signal")}
+          {this.renderVariable("MovAvg")}
+          {this.renderVariable("MovDev")}
+          {this.renderVariable("MovMax")}
+          {this.renderVariable("Duration")}
+          {this.renderVariable("Peak")}
+          {this.renderVariable("MinutesHeartRate")}
+      </div>
+    );
+  }
+}
+
+class View extends Component {
+  /*
+  plotly_plot(data, color_name, title) {
+    function rand() {
+      return Math.random();
+    }
+    var time = new Data();
+    var data = {
+      x: [],
+      y: [],
+      xaxis: 'xaxis',
+      yaxis: 'yaxis',
+      model: 'lines',
+      line: {
+	color: color_name,
+	shape: 'lines',
+      },
+      name: title,
+    };
+    Plotly.plot('graph', data);
+    var cnt = 0;
+    var interval = setInterval(function() {
+      var time = new Data();
+      var olderTime = time.setSeconds(time.getSeconds() - 10);
+      var futureTime = time.setSeconds(time.getSeconds() + 10);
+
+      var secondsView = {
+	xaxis: {
+	  type: 'date',
+	  range: [olderTime, futureTime],
+	},
+      };
+      Plotly.relayout('graph', secondsView);
+      var update = {
+	x: [[time]],
+	y: [[rand()]],
+      };
+      Plotly.extendTraces('graph', update);
+      if (cnt==100) clearInterval(interval);
+    },1000);
+  }
+  */  
+render(i) {
+    return (
+	<div className="View">
+	View {this.props.value}
+	</div>
+    );
+  }
+}
+
+class ViewPannel extends Component {
+  render() {
+    return (
+	<div className="ViewPannel">
+	<View />
+	</div>
+    );
+  }
+}
+
+class Insight extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      history: [
+	{
+	  data: Array(10).fill(null),
+	}
+      ],
+      variables: {
+	Signal:false, MovAvg:false, MovDev:false,
+	MovMax:false, Duration:false, Peak:false,
+	MimutesHeartRate:false, MimuteRespiratoryRate:false,
+      },
+      stepNumber: 0,
+    };
+  }
+  
+  handleVaribaleClick(variable_name) {
+    var is_clicked = this.state.variables[variable_name];
+    var new_variables = this.state.variables;
+    if (!is_clicked) {
+      new_variables[variable_name] = true;
+      this.setState({
+	variables: new_variables,
+      });
+    }
+    else {
+      new_variables[variable_name] = false;
+      this.setState({
+	variables: new_variables,
+      });
+    }
+  }
+
+  handleClickBackward() {}
+  handleClickStart()    {}
+  handleClickStop()     {}
+  handleClickForward()  {}
+  
+  render() {
+    let view_data = [];
+    return (
+	<div className="Insight">
+	<VariablePannel variables={this.state.variables}
+                        onClick={ variable => this.handleVaribaleClick(variable) } />
+	<ViewPannel data={view_data} />
+	<ControlPannel onClickBackward={this.handleClickBackward}
+                       onClickStart={this.handleClickStart}
+                       onClickStop={this.handleClickStop}
+                       onClickForward={this.handleClickForward}
+	/>
+	</div>
+    );
+  }
+}
+
+export default Insight

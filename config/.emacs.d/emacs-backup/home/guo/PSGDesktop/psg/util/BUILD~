@@ -1,0 +1,21 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+cc_library(
+    name = "utils",
+    srcs = ["utils.cc"],
+    hdrs = ["utils.h"],
+    copts = ["-std=c++17"],
+    linkopts = ["-lpthread", "-lcrypto", "-lssl",
+                "-lboost_system", "-lcpprest"],
+    deps = ["//:boost", "//psg/api:data"]
+)
+
+cc_binary(
+    name = "utils_test",
+    srcs = ["utils_test.cc", "utils.h"],
+    deps = [":utils"]
+)

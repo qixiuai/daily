@@ -1,0 +1,20 @@
+#include "dsp.h"
+
+#ifndef DSP_CAPI
+#define DSP_CAPI
+
+typedef float* Signal; // One signal is a vector
+typedef char*  FilterType;
+typedef char*  Algorithm;  
+typedef float* Param; // TODO
+typedef int    ParamSize;
+
+extern "C" {
+
+  // General API call
+  Signal filt(Signal signal, FilterType filter_type, Algorithm algorithm, \
+	      Param param, ParamSize param_size);
+ 
+}
+
+#endif

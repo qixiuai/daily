@@ -1,0 +1,139 @@
+#ifndef BCG_DISMAX_BUFFER
+#define BCG_DISMAX_BUFFER
+
+#include <memory>
+#include <stdexcept>
+#include <vector>
+
+namespace DisMax {
+  template <class T>
+    class Buffer {
+    /*
+  private:
+    void adjustBufferShorter(int buffer_size) {
+	this->capacity = buffer_size;
+	this->size     = buffer_size;
+	if (this->end == buffer_size)
+	  return;
+	if (this->end < buffer_size) {
+	  for (int i = 0; i < buffer_size; i++)
+	    data.get()[buffer_size-1-i] = data.get()[end-1-i];
+	  return;
+	}
+	for (int i = 0; i < buffer_size; i++) {
+	  data.get()[i] = data.get()[end-buffer_size+i];
+	}
+    }
+    
+    void adjustBufferLonger(int buffer_size) {
+	if (this->end == buffer_size)
+	  return;
+	auto ldata = std::shared_ptr<T>(new T[buffer_size], \
+					std::default_delete<T[]>());
+	T m = 0;
+	T val;
+	for (int i = 0; i < this->size; i++) {
+	  val =  ldata.get()[this->end-1-i];
+	  ldata.get()[buffer_size-1-i] = val;
+	  m += val;
+	}
+	m /= this->size;
+	for (int i = 0; i< buffer_size - this->size; i++) {
+	  ldata.get()[i] = m;
+	}
+	this->data     = ldata;
+	this->size     = buffer_size;
+	this->end      = buffer_size;
+      	this->capacity = buffer_size;
+    }
+  */
+  public:
+    int size;
+    int end;
+    int capacity;
+    std::shared_ptr<T> data; // Further make it private
+    
+    Buffer() {
+      this->capacity = 0;
+      this->size     = 0;
+      this->end      = 0;
+    }
+    Buffer(int buffer_size) {
+      this->end      = 0;
+      this->size     = 0;
+      this->capacity = buffer_size;
+      this->data     = std::shared_ptr<T>(new T[buffer_size], \
+				      std::default_delete<T[]>());
+    }
+    
+    bool isFull() const {
+      return this->size == this->capacity;
+    }
+
+    void push(T value) {
+      if (this->size < this->capacity)
+	this->size += 1;
+      if (this->end == this->capacity)
+	this->end = 0;
+      this->data.get()[this->end] = value;
+      this->end += 1;
+    }
+    
+    T operator[](int index) const {
+      if (index < 0)
+	throw std::underflow_error("index of Buffer cann't be negative!");
+      if (index > this->capacity)
+	throw std::overflow_error("Index exceeds bound of Buffer!");
+      if (index < this-> capacity)
+	return this->data.get()[index];
+      
+      auto real_index = (this->end + index) % this->capacity;
+      return this->data.get()[real_index];
+    }
+
+    /*
+    void adjustBuffer(int buffer_size) {
+      // better allocate a bigger buffer. when adjustbuffer, just ajust size
+      if (this->size < this->capacity)
+	throw std::runtime_error("Buffer is not full, can't adjust size!");
+      if (this->size == buffer_size)
+	return;
+      if (this->size > buffer_size)
+	return adjustBufferShorter(buffer_size);
+      return adjustBufferLonger(buffer_size);
+    }
+    */
+    friend std::ostream& operator<<(std::ostream& os, const Buffer& buf) {
+      for (int i = 0; i < buf.size; i++)
+	std::cout << buf[i] << '\t';
+      return os;
+    }
+    
+    void reset() {
+      this->size = 0;
+      this->end  = 0;
+    }    
+
+    T getMaximum() const {
+      T maximum = 0, val;
+      for (int i = 0; i < this->size; i++) {
+	val = (*this)[i];
+	if (val > maximum)
+	  maximum = val;
+      }
+      return maximum;
+    }
+
+    double getMean() const {
+      double m = 0;
+      for (int i = 0; i < this->size; i++) {
+	m += (*this)[i];
+      }
+      m /= this->size;
+      return m;
+    }
+  };
+    
+}
+
+#endif

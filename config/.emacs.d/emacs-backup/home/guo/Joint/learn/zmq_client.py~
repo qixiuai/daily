@@ -1,0 +1,16 @@
+
+import zmq
+import time
+import numpy as np
+
+context = zmq.Context()
+socket = context.socket(zmq.REQ)
+
+socket.connect("ipc://DataServer")
+
+for request in range(10):
+    socket.send(b"hello")
+    message = socket.recv()
+    print(np.frombuffer(message, dtype=np.float64))
+
+

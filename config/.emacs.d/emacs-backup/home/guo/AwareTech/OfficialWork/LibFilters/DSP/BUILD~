@@ -1,0 +1,11 @@
+cc_library(
+    name = "libdsp",
+    srcs = glob(["*.cpp"], exclude=["dsp_capi.cpp", "Documentation.cpp"]),
+    hdrs = glob(["*.h"], exclude=["dsp_capi.h"]),
+)
+cc_binary(
+    name = "example",
+    srcs = ["Documentation.cpp"],
+    deps = ["libdsp"],
+#    copts = ["-g"],
+)

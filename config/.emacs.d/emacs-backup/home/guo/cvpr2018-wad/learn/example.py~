@@ -1,0 +1,62 @@
+import argparse
+import torch
+from torch.autograd import Function
+parser = argparse.ArgumentParser(description='PyTorch Example')
+parser.add_argument('--disable-cuda', action='store_true',
+                    help='Disable CUDA')
+args = parser.parse_args()
+args.device = None
+if not args.disable_cuda and torch.cuda.is_available():
+  args.device = torch.device('cuda')
+else:
+  args.device = torch.device('cpu')
+
+class LinearFunction(Function):
+  @staticmethod
+  def forward(ctx, input, weight, bias=None):
+    ctx.save_for_backward(input, weight, bias)
+    output = input.mm(weight.t())
+    if bias is not None:
+      output += bias.unsqueeze(0).expand_as(output)
+    return output
+
+
+  # z = X*(W.t())+b
+  @staticmethod
+  def backward(ctx, grad_output):
+    input, weight, bias = ctx.saved_tensors
+    grad_input = grad_weight = grad_bias = None
+    if ctx.needs_input_grad[0]:
+      grad_input = grad_output.mm(weight)
+    if ctx.needs_input_grad[1]:
+      grad_weight = grad_output.t().mm(input)
+    if bias is not None and ctx.needs_input_grad[2]:
+      grad_bias = grad_output.sum(0).squeeze(0)
+    return grad_input, grad_weight, grad_bias
+
+linear = LinearFunction.apply
+
+class MulConstant(Function):
+  @staticmethod
+  def forward(ctx, tensor, constant):
+    ctx.constant = constant
+    return tensor * constant
+
+  # z = x * c 
+  @staticmethod
+  def backward(ctx, grad_output):
+    return grad_output * ctx.constant, None
+
+
+from torch.autograd import gradcheck
+
+input = (torch.randn(20, 20, requires_grad=True).double(), torch.randn(30, 20, requires_grad=True).double())
+test = gradcheck(linear, input, eps=1e-6, atol=1e-4)
+print(test)
+
+from torch import nn
+
+class Linear(nn.Module):
+  pass
+
+

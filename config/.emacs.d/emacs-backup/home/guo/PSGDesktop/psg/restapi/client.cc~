@@ -1,0 +1,62 @@
+
+#include "cpprest/http_client.h"
+#include "cpprest/filestream.h"
+#include "cpprest/json.h"
+#include "cpprest/http_listener.h"
+#include "cpprest/uri.h"
+#include "cpprest/asyncrt_utils.h"
+#include "cpprest/filestream.h"
+#include "cpprest/containerstream.h"
+#include "cpprest/producerconsumerstream.h"
+
+using namespace utility;
+using namespace web;
+using namespace web::http;
+using namespace web::http::client;
+using namespace concurrency::streams;
+
+void StreamCall(http_client& client) {
+  //  http_client client(U("http://127.0.0.1:80000"));
+  //utility::string_t file_name = U("/home/guo/gitlab/IsOnUse/data/A001_1811280035.edf");
+  utility::string_t file_name = U("/home/guo/gitlab/psg_test.edf");
+  utility::string_t content_type = U("application/octet-stream");
+  utility::string_t path_query = U("/");
+
+  auto is = concurrency::streams::fstream::open_istream(file_name, std::ios::in);
+
+  http_request message(methods::PUT);
+  //message.headers().set_content_type("application/octet-stream");
+  message.set_request_uri(U("/"));
+  message.set_body(is.get());
+
+  client.request(message).wait();
+}
+
+void JsonCall(http_client& client) {
+  //  http_client client(U("http://192.168.3.27:80001"));
+  json::value data = json::value::object();
+  data[U("Report/SpO2/MinimumSpo2LastingTime")] = json::value(1);
+  http_request message(methods::GET);
+  message.headers().set_content_type("application/json");
+  message.set_request_uri(U("/d6323050b6d948ea685181f587b53e8671cd8b33d3772277afb957e41097f98b/Report/Chart/"));
+  //  message.set_body(data);
+  client.request(message).then([](http_response resp){
+      ucout << "extract json\n";
+      return resp.extract_json();
+    }).then([](json::value event_json){
+	ucout << "fetch json: " << event_json << '\n';
+      }).wait();
+}
+
+
+int main() {
+  http_client client(U("http://localhost:8000"));
+  //  http_client client(U("http://120.55.53.161:8000"));
+  StreamCall(client);
+  //JsonCall(client);
+  return 0;
+}
+
+
+
+

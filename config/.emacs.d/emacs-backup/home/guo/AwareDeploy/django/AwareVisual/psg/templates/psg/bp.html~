@@ -1,0 +1,79 @@
+<head>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <title>PhysioVisual: Inspiring Mind</title>
+</head>
+  
+<h1> <center> Welcome to PhysioVisual System</center> </h1>
+<br>
+
+<center>
+  <form action="/psg/signal_file/" method="post">
+    {% csrf_token %}    
+    <input type="file" name="file" id="file">
+    <input type="checkbox" name="Notch" id="Notch" value="Notch">Notch &ensp;
+    <input type="checkbox" name="Bandpass20_38", id="Bandpass20_38" value="Bandpass20_38">Bandpass20_38 &ensp;
+    <input type="checkbox" name="FreqDomain", id="FreqDomain" value="FreqDomain">FreqDomain &emsp;
+    <input type="submit" value="Submit">
+  </form>      
+  <div id="myDiv"></div>
+
+</center>
+  
+  <script>
+  function getSignalFromTxt() {
+    var files = document.getElementById("signal_file").files;
+    var signal_file = "";
+    if (files.length > 0) {
+      signal_file = files[0].name;      
+    } else {
+      alert("You haven't chose any signal file");
+    }
+    return signal_file;
+  }
+function isSelected(name) {
+  var is_notch = document.getElementById(name).checked;
+  return is_notch;
+}
+
+function get_signal(file_path) {
+  var signal = [];
+  Plotly.d3.csv(file_path, function(line) {
+    console.log(line);
+    signal.push(parseInt(line));
+  })
+}
+
+function send_signal_file(file_path) {
+}
+
+function Run() {
+//  var signal_file = getSignalFromTxt();
+  if (signal_file.length == 0) return;
+
+  var is_notch = isSelected("Notch");
+  var is_bandpass   = isSelected("Bandpass20_38");
+  var is_freqdomain = isSelected("FreqDomain");
+  
+  var signal = get_signal(signal_file);
+
+  var data1 = {
+    x: [0, 1, 2],
+    y: [0, 1, 2],
+    mode: 'lines+markers',
+    name: "example1"
+  };
+  
+  var data2 = {
+    x: [0, 1, 2],
+    y: [1, 2, 3],
+    mode: 'lines+markers',
+    name: "example2"
+  };
+  
+  var data_to_plot = [data1, data2];
+  var layout = { title : "Signals"};
+  Plotly.newPlot('myDiv', data_to_plot, layout);    
+}
+</script>
+
+

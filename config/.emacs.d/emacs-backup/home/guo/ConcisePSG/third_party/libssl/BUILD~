@@ -1,0 +1,19 @@
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+cc_import(
+    name = "cpprest",
+    hdrs = glob(["cpprest/**/*.h"]),
+    shared_library = "libcpprest.so",
+)
+
+
+
+cc_library(
+    name = "libssl",
+    hdrs = [],
+)

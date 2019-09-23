@@ -1,0 +1,29 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+#from tensor2tensor.utils import models
+from tensor2tensor.data_generators import problem
+
+from absl import flags
+from absl import app
+
+FLAGS = flags.FLAGS
+FLAGS.DEFINE_string("quora_dir", "/home/guo/data/kaggle/quora/", "")
+
+
+class Quora(problme.Problem):
+
+    def generator(self, data_dir, tmp_dir):
+        return
+
+
+
+def main(unused_args):
+    del unused_args
+    
+    
+if __name__ == '__main__':
+    app.run(main)
+    

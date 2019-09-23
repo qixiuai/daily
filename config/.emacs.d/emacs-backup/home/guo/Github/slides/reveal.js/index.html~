@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+	<head>
+	  <meta charset="utf-8">
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	  <title>Shake-Shake Regularization</title>
+	  	  <!-- Theme used for syntax highlighting of code -->
+	  <link rel="stylesheet" href="lib/css/zenburn.css"> <meta charset="utf-8">
+	  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	  <!-- Bootstrap CSS -->
+	  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+	  <link rel="stylesheet" href="css/reveal.css">
+	  <link rel="stylesheet" href="css/theme/black.css">
+
+	  <!-- Printing and PDF exports -->
+	  <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
+	  <script>
+	    var link = document.createElement( 'link' );
+	    link.rel = 'stylesheet';
+	    link.type = 'text/css';
+	    link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+	    document.getElementsByTagName( 'head' )[0].appendChild( link );
+	  </script>
+	  <script type="text/x-mathjax-config">
+	    MathJax.Hub.Config({
+	    CommonHTML: {
+	    scale: 200
+	    }
+	    });
+	  </script>
+	</head>
+	<body>
+	  <div class="reveal">
+	    <div class="slides">
+	      <section>
+	      <h3>Shake-Shake Regularization</h3>
+	      <center>Lanting Guo</center>
+	      </section>
+	      <section> <h3>Problem</h3>
+		<div class="row">
+		  <div class="col-sm-6">
+			<img src="resource/shakeshake/overfitting.png" alt="overfitting curve">
+		  </div>
+		  <div class="col-sm-6">
+		    <p>To solve <font color="deepskyblue">overfitting</font> in a multi-branch network</p>
+		    </div>
+		  </div>
+	      </section>
+	      <section> <h3> Problem</h3>
+		<div class="row">
+		  <div class="col-sm-6">
+		    <img src="resource/shakeshake/GoogleLeNet2014.png">
+		  </div>
+		  <div class="col-sm-6">
+		    <p>To solve <font color="deepskyblue">overfitting</font>
+		      in a <font color="deepskyblue">multi-branch</font> network</p>
+		    </div>
+		  </div>
+	      </section>
+	      <section><h3>Idea</h3>
+		<div class="row">
+		  <div class="col-sm-6">
+		    <img src="resource/shakeshake/shakeshake.png">
+		  </div>
+		  <div class="col-sm-6">
+		    <p>summation of parallel branches</p>
+		    <p> &darr; </p>
+		    <p>stochastic affine combination</p>
+		  </div>
+		</div>
+	      </section>
+	      <section> <h3>Forward</h3>
+		<div class="row">
+		  <div class="col-sm-6">
+		    <img src="resource/shakeshake/forward.png">
+		  </div>
+		  <div class="col-sm-6">
+		    \[ x_{i+1} = x_i + F(x_i, W_{i}^{1}) + F(x_i, {W_i^2}) \]
+		    <p> &darr; </p>
+		    \( x_{i+1} = x_{i} + {\alpha}F(x_{i}, W_i^1) + (1-\alpha)F(x_{i}, W_i^2) \)
+		  </div>
+		</div>
+	      </section>
+	      <section> <h3>Backward</h3>
+		<div class="row">
+		  <div class="col-sm-6">
+		    <img src="resource/shakeshake/backward.png">
+		  </div>
+		  <div class="col-sm-6">
+		    \[ \frac{dl}{d{x_{i}}} = x_{i+1} + F(x_{i}, W_i^1) + F(x, W_i^2) \]
+		    <p> &darr; </p>
+		    \( x_i = x_{i+1} + {\beta}F(x_{i+1}, W_i^1) + (1-\beta)F(x_{i+1}, W_i^2) \)
+		  </div>
+		</div>
+	      </section>
+	      <section> <h3>Test</h3>
+		<div class="row">
+		  <div class="col-sm-6">
+		    <img src="resource/shakeshake/test.png">
+		  </div>
+		  <div class="col-sm-6">
+		    \( alpha = 0.5, beta = 0.5 \)
+		  </div>
+		</div>
+	      </section>
+	      <section> <h3>Experiments</h3>
+		<div class="row">
+		  <div class="col-sm-6">
+		    		<img src="resource/shakeshake/experiment.png">
+		    <img src="resource/shakeshake/test.png">
+		  </div>
+		  <div class="col-sm-6">
+		    \( alpha = 0.5, beta = 0.5 \)
+		  </div>
+		</div>		
+
+	      </section>
+	    </div>
+	  </div>
+
+	  <script src="lib/js/head.min.js"></script>
+	  <script src="js/reveal.js"></script>
+
+	  <script>
+	    // More info about config & dependencies:
+	    // - https://github.com/hakimel/reveal.js#configuration
+	    // - https://github.com/hakimel/reveal.js#dependencies
+	    Reveal.initialize({
+	    dependencies: [
+	    { src: 'plugin/markdown/marked.js' },
+	    { src: 'plugin/markdown/markdown.js' },
+	    { src: 'plugin/notes/notes.js', async: true },
+	    { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+	    ]
+	    });
+	    
+	  </script>
+	  <!-- Optional JavaScript -->
+	  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+	  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+	  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+	</body>
+</html>

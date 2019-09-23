@@ -1,0 +1,2 @@
+BCG.pdf:BCG.tex
+	xelatex $@

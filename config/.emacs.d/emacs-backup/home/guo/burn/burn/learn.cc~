@@ -1,0 +1,36 @@
+
+#include <algorithm>
+#include <iostream>
+#include <vector>
+#include <numeric>
+#include <map>
+
+void add1(std::vector<int> vec) {
+  vec[0] += 1;
+  std::cerr << vec[0] << '\n';
+}
+
+int add(int a, int b=1) {
+  return a + b;
+}
+
+int main() {
+  std::vector<int> data{0,1,2,3};
+  
+  //add1(data);
+  auto& d2 = data;
+  d2[0] += 1;
+  
+  std::cerr << data[0] << '\n';
+  
+  std::map<int, std::vector<float>> data_m;
+  for (int i = 0; i < 10; i++) {
+    std::vector<float> vec(10,i);
+    data_m[i] = vec;
+  }
+  
+  for (auto v : data_m[2]) {
+    std::cerr << v << '\n';
+  }
+  return 0;
+}

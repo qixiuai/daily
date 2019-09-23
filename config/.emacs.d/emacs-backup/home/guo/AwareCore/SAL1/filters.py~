@@ -1,0 +1,26 @@
+#!/bin/env python
+import os
+import argparse
+from ctypes import * #cdll
+
+import numpy as np
+from scipy import fftpack
+
+if os.name == 'posix':
+    libNotch = cdll.LoadLibrary("shared/libNotch.so")
+else:
+    raise Exception("Platform not detected!");
+
+def Notch(x):
+    sz = len(x)
+    x_array = (c_float * sz)(*x)
+    y = [0 for i in x];
+    y_array = (c_float * sz)(*y)
+    for i in range(sz):
+        libNotch.Notch(y_array, x_array, c_int(i));
+    return list(y_array);
+
+def FFTTransform(sample_rate, x):
+    X = fftpack.fft(x)
+    freqs = fftpack.fftfreq(len(x)) * sample_rate
+    return (freqs.tolist(), np.abs(X).tolist());

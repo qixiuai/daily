@@ -1,0 +1,33 @@
+
+import gin
+import tensorflow as tf
+
+from absl import app
+from dataset import Dataset
+from model import BaseModel
+from models.preprocess import preprocess
+
+import pdb
+
+
+def train(model, train_dataset):
+    for ind, example in enumerate(train_dataset):
+        print(example.keys())
+        ret = preprocess(example)
+        print(ret.keys())
+        break
+
+def main(unused_args):
+    del unused_args
+    config = None
+    data_dir = "/home/guo/phoenix/phoenix/"
+    config_file = data_dir + "configs/demo.gin"
+    #gin.parse_config_files_and_bindings([config_file], config)
+    train_dataset = Dataset(mode="train").dataset
+    model = BaseModel()
+    train(model, train_dataset)
+
+
+if __name__ == '__main__':
+    app.run(main)
+

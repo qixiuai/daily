@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#rm -rf cache/*
+bazel run :pai_main -- \
+      --dataset="ecg" \
+      --data_dir=/home/guo/physio/dl/tfrecords/isruc.tfrecords \
+      --model_dir=/home/guo/SoftPAI/pai/cache/models/$(date +"%d|%T") \
+      --batch_size=512 --num_parallel_calls=4 \
+      --train_steps=100000 --enable_time_history=false \
+      --mode=train \
+      --enable_tensorboard=true \
+      --num_gpus=1
+#--profile_steps=1000,3000

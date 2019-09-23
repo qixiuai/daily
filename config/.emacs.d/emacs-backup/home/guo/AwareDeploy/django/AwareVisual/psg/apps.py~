@@ -1,0 +1,5 @@
+from django.apps import AppConfig
+
+
+class PsgConfig(AppConfig):
+    name = 'PSG'

@@ -1,0 +1,153 @@
+function rand() {
+  return Math.random();
+}
+
+function update_realtime_data() {
+}
+
+var time = new Date();
+
+var signal = {
+  x: [],
+  y: [],
+  xaxis: 'xaxis',
+  yaxis: 'yaxis',
+  mode: 'lines',
+  line: {
+    color: '#80CAF6',
+    shape: 'lines',
+  },
+  name: "Signal",
+}
+
+var movdev = {
+  x: [],
+  y: [],
+  xaxis: 'x2',
+  yaxis: 'y2',
+  mode: 'lines',
+  line: {color: '#DC143C'}, // crimson
+  name: "MovDev",
+};
+
+var movmax = {
+  x: [],
+  y: [],
+  xaxis: 'x3',
+  yaxis: 'y3',
+  mode: 'lines',
+  line: {color: '#000000'}, // black
+  name: "MovMax",
+};
+
+var durpeak = {
+  x: [],
+  y: [],
+  xaxis: 'x4',
+  yaxis: 'y4',
+  mode: 'lines',
+  line: {color: '#0000FF'}, // blue
+  name: "DurationAndPeak",
+};
+
+var hr = {
+  x: [],
+  y: [],
+  xaxis: 'x5',
+  yaxis: 'y5',
+  mode: 'lines',
+  line: {color: '#FFA500'}, // orange
+  name: "HeartRate",
+};
+
+var layout = {
+  xaxis: {
+    type: 'date',
+    showticklabels: false,
+    domain: [0, 1],
+  },
+  yaxis:{domain:[0.75, 1]},
+  xaxis2: {
+    type: 'date',
+    anchor: 'y2',
+    domain: [0, 1],    
+  },
+  yaxis2: {
+    anchor: 'x2',
+    domain:[0.50, 0.75],
+  },   
+  xaxis3: {
+    type: 'date',
+    anchor: 'y3',
+    domain: [0, 1],    
+  },
+  yaxis3: {
+    anchor: 'x3',
+    domain:[0.30, 0.50],
+  }, 
+  xaxis4: {
+    type: 'date',
+    anchor: 'y4',
+    domain: [0, 1],
+  },
+  yaxis4: {
+    anchor: 'x4',
+    domain:[0.10, 0.30],
+  },
+  xaxis5: {
+    type: 'date',
+    anchor: 'y5',
+    domain: [0, 1],    
+  },
+  yaxis5: {
+    anchor: 'x5',
+    domain:[0, 0.10],
+  },
+};
+
+var data = [signal, movdev, movmax, durpeak, hr];
+
+Plotly.plot('graph', data, layout);
+
+var cnt = 0;
+
+var interval = setInterval(function() {
+
+  var time = new Date();
+  var olderTime = time.setSeconds(time.getSeconds() - 10);
+  var futureTime = time.setSeconds(time.getSeconds() + 10);
+
+  var secondsView = {
+        xaxis: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis2: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis3: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis4: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+        xaxis5: {
+          type: 'date',
+          range: [olderTime,futureTime],
+        },
+  };
+  
+  Plotly.relayout('graph', secondsView, [0,1,2,3,4]);
+  
+  var update = {
+    x: [[time], [time], [time], [time], [time]],
+    y: [[rand()], [rand()], [rand()],[rand()], [rand()]],
+  };
+  
+  Plotly.extendTraces('graph', update, [0,1,2,3,4]);
+
+  if(cnt === 100) clearInterval(interval);
+}, 1000);

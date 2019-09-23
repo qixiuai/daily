@@ -1,0 +1,62 @@
+
+import pdb
+import numpy as np
+import contextlib2
+
+from absl import app
+from absl import flags
+from absl import logging
+
+from pai.dataset_tools.stage_tf_records_utils import tf_example_from_dict
+from pai.dataset_tools.tf_record_creation_util import write_sharded_tf_records
+
+from shhs import SHHS
+
+
+def make_tf_examples(dataset):
+    mapper = {"EEG": "C4_M1", "EEG(sec)": "C3_M2", "EOG(L)": "E1_M2", "EOG(R)": "E2_M2"}
+    for dt in dataset:
+        new_dt = {}
+        for name in dt.keys():
+            if name in mapper:
+                channel_name = mapper[name]
+                new_dt[channel_name] = dt[name]
+            else:
+                new_dt[name] = dt[name]
+        example = tf_example_from_dict(new_dt)
+        yield example
+
+
+def main(unused_args):
+    del unused_args
+    db_name = "shhs"
+    tf_record_dir = "/home/guo/physio/dl/tfrecords/shhs.tfrecords/"
+    channels = ['EEG', "EEG(sec)", "EOG(L)", "EOG(R)", "EMG"]
+    step = 30
+
+    def generate_tfrecords(dataset):
+        def _generate_tfrecords(producer, mode, num_shards=100):
+            tf_examples = make_tf_examples(producer)
+            template = "{}.{}.{}.tfrecords".format(db_name, step, mode)
+            write_sharded_tf_records(tf_record_dir + template,
+                                     tf_examples, num_shards=num_shards)
+        mode = "train"
+        train_producer = dataset(mode=mode, step=step, channels=channels)()
+        _generate_tfrecords(train_producer, mode, num_shards=800)
+
+        mode = "validation"
+        valid_producer = dataset(mode=mode, step=step, channels=channels)()
+        _generate_tfrecords(valid_producer, mode, num_shards=200)
+
+        mode = "test"
+        test_producer = dataset(mode=mode, step=step, channels=channels)()
+        _generate_tfrecords(test_producer, mode, num_shards=200)
+
+    generate_tfrecords(SHHS)
+
+
+if __name__ == "__main__":
+    app.run(main)
+
+
+

@@ -1,0 +1,15 @@
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_data(signal):
+    plt.plot(signal)
+    plt.show()
+
+if __name__ == "__main__":
+    data_file = "log"
+    data_file = "../data/highpass_parsed_heart[110]-hx[15].txt"
+    data = np.loadtxt(data_file, delimiter=',')
+    #signal = data[:, 0]
+    signal = data;
+    plot_data(signal)

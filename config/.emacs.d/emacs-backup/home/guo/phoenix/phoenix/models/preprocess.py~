@@ -1,0 +1,93 @@
+
+import pdb
+import gin
+import numpy as np
+import tensorflow as tf
+
+@gin.configurable
+def get_all_anchors(stride=16,
+                    sizes=(32, 64, 128, 256, 512),
+                    ratios=(0.5, 1., 2.),
+                    max_size=1333):
+    anchors = []
+    for sz in sizes:
+        for ratio in ratios:
+            w = np.sqrt(sz * sz / ratio)
+            h = ratio * w
+            anchors.append([-w, -h, w, h])
+    cell_anchors = np.asarray(anchors) * 0.5
+
+    field_size = int(np.ceil(max_size / stride))
+    shifts = (np.arange(0, field_size) * stride).astype("float32")
+    shift_x, shift_y = np.meshgrid(shifts, shifts)
+    shift_x = shift_x.flatten()
+    shift_y = shift_y.flatten()
+    shifts = np.vstack((shift_x, shift_y, shift_x, shift_y)).transpose()
+    K = shifts.shape[0]
+
+    A = cell_anchors.shape[0]
+    field_of_anchors = cell_anchors.reshape((1, A, 4)) + shifts.reshape((1, K, 4)).transpose((1, 0, 2))
+    field_of_anchors = field_of_anchors.reshape((field_size, field_size, A, 4))
+    field_of_anchors = field_of_anchors.astype("float32")
+    return field_of_anchors
+
+
+def filter_boxes_inside_shape(boxes, shape):
+    assert boxes.ndim == 2, boxes.shape
+    assert len(shape) == 2, shape
+    h, w = shape
+    indices = np.where(
+        (boxes[:,0] >= 0) &
+        (boxes[:,1] >= 0) &
+        (boxes[:,2] <= w) &
+        (boxes[:,3] <= h))[0]
+    return indices, boxes[indices, :]
+    
+
+def get_rpn_anchor_input(image, boxes, num_anchor=4):
+    all_anchors = get_all_anchors()
+    featuremap_anchors_flatten = all_anchors.reshape((-1, 4))
+    # only use anchors inside the image
+    inside_ind, inside_anchors = filter_boxes_inside_shape(featuremap_anchors_flatten, image.shape[:2])
+    anchor_labels, anchor_gt_boxes = get_anchor_labels(
+        inside_anchors, boxes[is_crowd==0], boxes[is_crowd==1])
+    anchorH, anchorW = all_anchors.shape[:2]
+    featuremap_labels = -np.ones((anchorH * anchorW * num_anchor), dtype="int32")
+    featuremap_labels[inside_ind] = anchor_labels
+    featuremap_boxes = np.zeros((anchorH * anchorW * num_anchor, 4), dtype="float32")
+    featuremap_boxes[inside_ind, :] = anchor_gt_boxes
+    featuremap_boxes = featuremap_boxes.reshape((anchorH, anchorW, num_anchor, 4))
+    return featuremap_labels, featuremap_boxes
+
+
+def preprocess(inputs):
+    image = inputs['image/decoded']
+    image_label = inputs['image/class/label']
+    bbox_labels = inputs['image/object/class/label']
+    bbox_xmax = inputs['image/object/bbox/xmax']
+    bbox_xmin = inputs['image/object/bbox/xmin']
+    bbox_ymax = inputs['image/object/bbox/ymax']
+    bbox_ymin = inputs['image/object/bbox/ymin']
+    bbox_xmin = tf.sparse.to_dense(bbox_xmin)
+    bbox_ymin = tf.sparse.to_dense(bbox_ymin)
+    bbox_xmax = tf.sparse.to_dense(bbox_xmax)
+    bbox_ymax = tf.sparse.to_dense(bbox_ymax)
+    height, width = tf.shape(image)[:2]
+    # handle not absolute coordinates
+    bbox_xmin = bbox_xmin * tf.cast(width, dtype=tf.float32)
+    bbox_ymin = bbox_ymin * tf.cast(height, dtype=tf.float32)
+    bbox_xmax = bbox_xmax * tf.cast(width, dtype=tf.float32)
+    bbox_ymax = bbox_ymax * tf.cast(height, dtype=tf.float32)
+    ret = {"image": image}
+    ret["gt_bbox_xmin"] = bbox_xmin
+    ret["gt_bbox_xmax"] = bbox_xmax
+    ret["gt_bbox_ymin"] = bbox_ymin
+    ret["gt_bbox_ymax"] = bbox_ymax
+    ret["gt_bbox_labels"] = bbox_labels
+    boxes = tf.stack([bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax])
+    ret["anchor_labels"], ret["anchor_boxes"] = get_rpn_anchor_input(image, boxes)
+    return ret
+
+
+if __name__ == '__main__':
+    get_all_anchors()

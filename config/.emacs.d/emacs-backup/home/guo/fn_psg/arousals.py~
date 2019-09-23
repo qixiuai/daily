@@ -1,0 +1,38 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from ops import ops
+
+
+class ArousalModel(ops.Operation):
+
+    def inputs(self):
+        pass
+
+    def outputs(self):
+        pass
+
+    def body(self, inputs):
+        return outputs
+
+
+
+
+
+
+
+
+    
+    
+
+
+
+
+
+
+
+
+
+

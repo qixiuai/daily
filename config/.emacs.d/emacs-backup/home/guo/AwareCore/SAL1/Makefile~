@@ -1,0 +1,2 @@
+run: BCG.cc BCG.h Run.cc
+	g++ -std=c++17 BCG.cc BCG.h Run.cc -o $@

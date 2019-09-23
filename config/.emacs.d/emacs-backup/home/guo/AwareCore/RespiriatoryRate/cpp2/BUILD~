@@ -1,0 +1,27 @@
+cc_library(
+    name = "respiratory_rate",
+    srcs =  ["findpeaks.cc", "respiratoryrate_wrapper.cc", "framework.cc"],
+    hdrs = ["respiratoryrate_wrapper.h", "findpeaks.h", "framework.h"],
+    deps = ["//:boost"],
+)
+
+cc_binary(
+    name = "respiratory_rate.dll",
+    srcs = ["findpeaks.cc", "findpeaks.h", "framework.cc", "framework.h", "respiratoryrate_wrapper.cc", "respiratoryrate_wrapper.h"],
+    deps = ["//:boost",],
+    features = ["windows_export_all_symbols"],
+    linkshared = 1,
+    copts = ["-std=c++17"]
+)
+
+cc_binary(
+    name = "run_peaks",
+    srcs = ["run_peaks.cc", "findpeaks.h", "utils.h"],
+    deps = ["//:respiratory_rate", "@com_google_absl//absl/strings"],
+    copts = ["-std=c++17", "-g"]
+)
+
+cc_library(
+    name = "boost",
+    srcs = glob(["boost/**/*.hpp"]),
+)

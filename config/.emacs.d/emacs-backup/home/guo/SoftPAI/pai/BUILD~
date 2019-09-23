@@ -1,0 +1,14 @@
+package(default_visibility = ["//visibility:public"])
+
+
+py_binary(
+    name = "pai_main",
+    srcs = ["pai_main.py", "data_pipeline.py"],
+    deps = [
+        "//pai/models:models",
+        "//pai/optimizer:optimizer",
+        "//pai/utils/misc:misc",
+        "//pai/utils:flags",
+        "//pai/utils:logs",
+    ]
+)

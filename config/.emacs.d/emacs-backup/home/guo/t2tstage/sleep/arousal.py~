@@ -1,0 +1,40 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import random
+import numpy as np
+import pandas as pd
+
+from glob import glob
+from scipy.io import loadmat
+
+from tensor2tensor.utils import registry
+from tensor2tensor.layers import modalities
+from tensor2tensor.data_generators import problem
+from tensor2tensor.data_generators import generator_utils
+
+import tensorflow as tf
+
+_DATA_DIR = ""
+
+random.seed(2018)
+
+@registry.register_problem
+class PhycArousal(StageProblem):
+
+    @property
+    def num_signals(self):
+        pass
+
+    def generate_samples(self, data_dir, tmp_dir, dataset_split):
+        pass
+
+    
+    
+
+
+
+

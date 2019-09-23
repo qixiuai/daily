@@ -1,0 +1,6 @@
+
+cc_binary(
+    name = "io",
+    srcs = ["file.cc", "file.h"],
+    deps = ["@boost", "@eigen", "@absl//absl/strings"],
+)

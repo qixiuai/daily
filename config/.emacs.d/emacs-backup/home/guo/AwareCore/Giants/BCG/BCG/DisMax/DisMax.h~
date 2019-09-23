@@ -1,0 +1,7 @@
+#include "Buffer.h"
+#include "SignalBuffer.h"
+#include "MovAvgBuffer.h"
+#include "MovDevBuffer.h"
+#include "MovMaxBuffer.h"
+#include "DurationBuffer.h"
+#include "PeakBuffer.h"

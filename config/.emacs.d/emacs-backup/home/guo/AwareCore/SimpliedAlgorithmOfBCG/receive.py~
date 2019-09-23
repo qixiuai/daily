@@ -1,0 +1,49 @@
+import os
+import socket
+import sys
+import traceback
+import time
+from parser import Parser
+
+
+def startTCPServer(parse_func, out_file_path):
+    __out_file = open(out_file_path, "wb");
+    __socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+    __socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1);
+    __socket.bind(("192.168.4.3", 7006));
+    __socket.listen(5);
+    try:
+        __connection, __address = __socket.accept();
+        __tic = time.time();
+        __num_packet_received = 0;
+        first = True;
+        while (True):
+            __buf = __connection.recv(1500);
+            __num_packet_received += 1;
+#            __parsed = parse_func(__buf);
+            __parsed = __buf;
+            for __num in __parsed:
+                if first:
+                    print(time.localtime(time.time()))
+#                    __out_file.write(time.asctime()+'\n');
+                    first = False;
+                __out_file.write(__num);
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info();
+        info = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback));
+        print(info);
+        __toc = time.time();
+        __dur = __toc - __tic;
+        print("time elapsed: {}, get {} packets".format(__dur, __num_packet_received));
+        __connection.close();
+        __socket.close();
+        __out_file.close();
+        sys.exit(0);
+
+def main(out_file_path):
+    parse_func = Parser().parse;
+    startTCPServer(parse_func, out_file_path);
+
+if __name__ == '__main__':
+    out_file_path = "tcp_binary_data.txt";
+    main(out_file_path);

@@ -1,0 +1,12 @@
+cc_library(
+    name = "DisMax",
+    srcs = ["DisMax.cpp"],
+    hdrs = [],
+    copts = ["-std=c++17"],
+)
+
+cc_library(
+    name = "RunDisMax",
+    srcs = ["DisMax.cpp"],
+    copts = ["-std=c++17"],    
+)

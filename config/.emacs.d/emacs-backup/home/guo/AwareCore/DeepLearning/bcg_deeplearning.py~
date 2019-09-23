@@ -1,0 +1,189 @@
+from __future__ import print_function
+import argparse
+import torch
+import torch.utils.data
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import torch.autograd as autograd
+from torch.utils.data import Dataset, DataLoader
+from torch.autograd import Function
+from tensorboardX import SummaryWriter
+from collections import namedtuple
+from scipy.io import loadmat
+import numpy as np
+import time
+import pdb
+
+writer = SummaryWriter()
+
+def load_data(mat_file, data_dir="data/"):
+    data = loadmat(data_dir+mat_file);
+    X, Y = data["X"], data["Y"];
+    X = X.flatten();
+    Y = Y.flatten();
+    return (X, Y);
+
+class BCGDataset(Dataset):
+    def __init__(self, mat_file, seqlen=500):
+        """
+        set seqlen to 10s
+        """
+        self.seqlen = seqlen;
+        X, Y = load_data(mat_file);
+        X = torch.from_numpy(X);
+#        Y = torch.from_numpy(Y);
+        self.X = X.type(torch.FloatTensor);
+#        self.Y = Y.type(torch.FloatTensor);
+        self.Y = Y;
+
+    def __len__(self):
+        return self.X.shape[0]-self.seqlen+1;
+
+    def find_peak_position(self, y):
+#        assert sum(y) <= 1
+        inds = []
+        for (ind, val) in enumerate(y):
+            if (val == 1):
+                inds.append(ind)
+        if len(inds) == 0:
+            return 0;
+        elif len(inds) == 1:
+            return inds[0];
+        else:
+            ret = 0
+            for ind in inds:
+                if np.abs(ind-250) < ret:
+                    ret = ind;
+            return ret;
+    
+    def __getitem__(self, ind):
+        x = self.X[ind:ind+self.seqlen];
+        y = self.Y[ind:ind+self.seqlen];
+        x = x.view(1, -1);
+        ind = self.find_peak_position(y)
+        label = torch.tensor(ind).type(torch.float32)
+        return (x, label);
+
+class LSTMPeaker(nn.Module):
+    """
+    Peak Locator Model
+    """
+    def __init__(self):
+        super(LSTMPeaker, self).__init__();
+        self.hidden_dim = 10;
+        self.bidirectional = True;
+        self.lstm = nn.LSTM(1, self.hidden_dim, batch_first=True,
+                            bidirectional=self.bidirectional);
+        output_dim = 2*self.hidden_dim if self.bidirectional else self.hidden_dim;
+        self.linear = nn.Linear(output_dim, 1);
+        
+    def forward(self, inputs):
+        output, hidden = self.lstm(inputs);
+        output = F.sigmoid(self.linear(output));
+        return output;
+
+
+class VGGNet(nn.Module):
+    def __init__(self):
+        super(VGGNet, self).__init__();
+        self.conv1 = nn.Conv1d(1,  32, kernel_size=3);
+        self.conv2 = nn.Conv1d(32, 32, kernel_size=3);
+        self.conv3 = nn.Conv1d(32, 32, kernel_size=3, stride=10);
+        self.conv4 = nn.Conv1d(32, 64, kernel_size=3);
+        self.conv5 = nn.Conv1d(64, 64, kernel_size=3);
+        self.conv6 = nn.Conv1d(64, 64, kernel_size=3, stride=10);
+        self.conv7 = nn.Conv1d(64, 64, kernel_size=5);
+        self.conv8 = nn.Conv1d(64,  1, kernel_size=1);
+                
+    def forward(self, x):
+        x = F.relu(self.conv1(x));
+        x = F.relu(self.conv2(x));
+        x = F.relu(self.conv3(x));
+        x = F.relu(self.conv4(x));
+        x = F.relu(self.conv5(x));
+        x = F.relu(self.conv6(x));
+        x = F.relu(self.conv7(x));
+        x = F.relu(self.conv8(x));
+        x = torch.squeeze(x);
+        return x;
+    
+def xavier_weights_init(m):
+    if isinstance(m, nn.Conv1d):
+        xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain("relu"));
+    
+def PeakBCELoss(output, target):
+    peak_loss    = -500 * target * torch.log(output);
+    nonpeak_loss =   -(1-target) * torch.log(1-output);
+    loss = peak_loss + nonpeak_loss;
+    loss = loss.mean() # apply mean on batch dim
+    return loss;
+    
+def eval_accuracy(preds, truths):
+    preds = (preds > 0.5).type(torch.float32);
+    C =  preds == truths;
+    acc = C.sum().type(torch.float32) / C.numel();
+    return torch.tensor(acc), C.numel() - C.sum();
+
+def cnn_eval_accuracy(preds, truths):
+    return (preds - truths).abs().mean()
+
+def confusion_matrix(preds, truths):
+    preds = preds > 0.5
+    peak_peak       = (preds[truths==1] == 1).sum();
+    peak_nonpeak    = (preds[truths==1] == 0).sum();
+    nonpeak_peak    = (preds[truths==0] == 1).sum();
+    nonpeak_nonpeak = (preds[truths==0] == 0).sum();
+    return peak_peak, peak_nonpeak, nonpeak_peak, nonpeak_nonpeak;
+
+def print_confusion_matrix(preds, truths):
+    peak_peak, peak_nonpeak, nonpeak_peak, \
+        nonpeak_nonpeak = confusion_matrix(preds, truths);
+    print("T\P        Peak\t  NonPeak\n")
+    print("Peak:{:>10}\t{:>10}\n".format(peak_peak,
+                                       peak_nonpeak))
+    print("NonPeak:{:>7}\t{:>10}\n".format(nonpeak_peak,
+                                          nonpeak_nonpeak))
+#    print("Sum:\t{}\t{}".format(peak_peak+nonpeak_peak))
+        
+def train(model, device, train_loader, optimizer, epoch):
+    model.train();
+#    criterion = PeakBCELoss;
+    criterion = nn.MSELoss();
+    dataset_len = len(train_loader)
+    for batch_ind, (data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device);
+        optimizer.zero_grad();
+        output = model(data);
+        loss   = criterion(output, target);
+        loss.backward();
+        optimizer.step();
+        acc = cnn_eval_accuracy(output, target);
+        if batch_ind % 10 == 0:
+            writer.add_scalar("MSELoss", loss,
+                              epoch * dataset_len + batch_ind)
+            writer.add_scalar("offset_from_truth", acc,
+                              epoch * dataset_len + batch_ind)
+            print("loss: {}, offset_from_truth: {}, ".format(loss, acc))
+#            print_confusion_matrix(output, target)
+        
+def test(model, test_loader):
+    model.test();
+    pass
+
+def main():
+    torch.manual_seed(2018);
+    HP = namedtuple("HyperParameters", ["use_cuda", "epochs", "lr", "momentum"]);
+    hp = HP(use_cuda=False, epochs=15,  lr=0.001, momentum=0.9);
+    device   = torch.device("cuda" if hp.use_cuda else "cpu");
+    mat_file = "glt_labeled.mat";
+    train_dataset = BCGDataset(mat_file);
+    train_loader  = torch.utils.data.DataLoader(train_dataset, batch_size=512, num_workers=2);
+#    model = LSTMPeaker().to(device);
+    model = VGGNet().to(device);
+    optimizer = optim.Adam(model.parameters(), lr=hp.lr);
+    for epoch in range(hp.epochs):
+        train(model, device, train_loader, optimizer, epoch);
+
+if __name__ == '__main__':
+    main();

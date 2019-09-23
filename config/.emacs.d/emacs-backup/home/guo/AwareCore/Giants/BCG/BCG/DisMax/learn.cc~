@@ -1,0 +1,30 @@
+#include <iostream>
+
+#include <memory>
+
+class MyClass {
+  int a;
+  int b;
+public:  
+  MyClass(int a, int b):a{a},b{b} {}
+  int add(int c) {
+    return a+b+c;
+  }
+};
+
+int main() {
+
+  auto ptr = std::shared_ptr<int>(new int[10], std::default_delete<int[]>());
+
+  for (int i=0; i<10; i++)
+    ptr.get()[i] = i;
+  
+  for (int i=0; i<10; i++)
+    //    std::cout<< ptr.get()[i] << '\t';
+    std::cout << std::endl;
+
+  MyClass myclass(1,1);
+  std::cout << myclass.add(1) << std::endl;
+    
+  return 0;
+}

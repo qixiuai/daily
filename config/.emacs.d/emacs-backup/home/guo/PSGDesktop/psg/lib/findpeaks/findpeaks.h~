@@ -1,0 +1,20 @@
+
+#ifndef PSG_LIB_FINDPEAKS_
+#define PSG_LIB_FINDPEAKS_
+
+namespace psg {
+  namespace lib {
+    
+    namespace findpeaks {
+      std::vector<int> findpeaks(const std::vector<float>* signal, int period);
+    }
+  }
+}
+
+
+
+
+
+
+
+#endif

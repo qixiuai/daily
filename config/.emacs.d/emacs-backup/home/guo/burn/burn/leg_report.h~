@@ -1,0 +1,45 @@
+
+#ifndef BURN_LEG_REPORT_H_
+#define BURN_LEG_REPORT_H_
+
+#include <map>
+#include <vector>
+
+#include "burn/common_type.h"
+
+namespace burn {
+
+  class LegReport {
+  public:
+    struct Args {
+      std::vector<int> stages;
+      std::vector<Event> plms;
+      Args(std::vector<int> stages,
+	   std::vector<Event> plms) {
+	this->stages = stages;
+	this->plms = plms;
+      }
+    };
+    
+    struct Rets {
+      std::map<std::string, float> table;
+    };
+
+    LegReport(Rets* rets, const Args* args): args_{args}, rets_{rets} {}
+    void Run();
+
+  private:
+    const Args* args_;
+    Rets* rets_;
+  };
+
+
+
+}
+
+
+
+
+
+
+#endif

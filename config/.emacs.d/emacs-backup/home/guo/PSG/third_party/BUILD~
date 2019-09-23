@@ -1,0 +1,12 @@
+cc_import(
+    name = "fftw3",
+    hdrs = glob(["*.h"]),
+    shared_library = "libfftw3.so",
+    visibility = ["//visibility:public"],
+)
+cc_import(
+    name = "libzmq",
+    hdrs = glob(["*.h"]),
+    shared_library = "libzmq.so",
+    visibility = ["//visibility:public"],
+)

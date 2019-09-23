@@ -1,0 +1,22 @@
+
+#include "wrapper.h"
+#include "findpeaks.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  NoiseClassifier* ClassifierInit() {
+    return new NoiseClassifier();
+  }
+  
+  int Classify(NoiseClassifier* classifer, float sample) {
+    return classifer->classify(sample);
+  }
+  
+  void ClassifierDestroy(NoiseClassifier* classifer) {
+    delete classifier;
+  }
+  
+#ifdef __cplusplus
+}
+#endif

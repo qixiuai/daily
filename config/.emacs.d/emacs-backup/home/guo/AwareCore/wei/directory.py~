@@ -1,0 +1,46 @@
+import os
+import argparse
+
+
+
+def dir_must_exist(dirpath):
+    if not os.path.exists(dirpath):
+        raise "{} not exist".format(dirpath)
+
+def mkdir(dirpath):
+    if not os.path.exists(dirpath):
+        os.mkdir(dirpath)
+    else:
+        print("{} already exists".format(dirpath))
+
+
+def mkdirs(dirpaths):
+    for dirpath in dirpaths:
+        mkdir(dirpath)
+
+def generate_dirpaths(dirpath):
+    parent_dirpath = os.path.dirname(dirpath)
+    filenames = os.listdir(dirpath)
+    filepaths = [os.path.join(parent_dirpath, filename)
+                 for filename in filenames]
+    return filepaths
+
+def mkdirs_based_on_directory(dirpath):
+    new_dirpaths = generate_dirpaths(dirpath)
+    mkdirs(new_dirpaths)
+
+def main(args):
+    dir = os.path.dirname(args.dir)
+    dir_must_exist(dir)
+    filename = os.path.basename(args.dir)
+    new_dirpath = os.path.join(dir, 'new-'+filename)
+    mkdir(new_dirpath)
+    mkdirs_based_on_directory(dir)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--dir', help='Directory which your want to search')
+    args = parser.parse_args()    
+    main(args)
+

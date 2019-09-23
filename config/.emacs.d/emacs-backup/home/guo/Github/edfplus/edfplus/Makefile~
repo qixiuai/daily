@@ -1,0 +1,13 @@
+FLAGS = -fPIC
+
+PYTHONI = -I/home/guo/anaconda3/include/python3.6m/
+PYTHONL = -Xlinker -export-dynamic
+
+
+all:
+	g++ -fPIC -c edfplus.cc -o edfplus.o
+	swig -c++ -python -o edfplus_wrap.cxx edfplus.i
+	g++ $(FLAGS) $(PYTHONI) -c edfplus_wrap.cxx -o edfplus_wrap.o
+	g++ $(PYTHONL) $(LIBFLAGS) -shared edfplus.o edfplus_wrap.o -o _edfplus.so
+
+

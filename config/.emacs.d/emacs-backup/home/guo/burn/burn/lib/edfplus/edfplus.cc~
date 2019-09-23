@@ -1,0 +1,215 @@
+
+#include "psg/lib/edfplus/edfplus.h"
+
+#include <algorithm>
+#include <iostream>
+#include <chrono>
+#include <cstdint>
+#include <exception>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <numeric>
+#include <unordered_map>
+#include <utility>
+
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/strip.h"
+
+
+/*
+EdfPlus::EdfPlus(std::string filepath) {
+  std::streampos file_size;
+  std::ifstream file(filepath, std::ios::binary);
+  file.seekg(0, std::ios::end);
+  file_size = file.tellg();
+  file.seekg(0, std::ios::beg);
+
+  std::vector<char> raw_chars;
+  raw_chars.resize(file_size);
+  file.read(&raw_chars[0], file_size);
+
+  std::vector<unsigned char>
+    tmp(raw_chars.begin(), raw_chars.end());
+  raw = tmp;
+  _parse_data();
+}
+*/
+namespace psg {
+
+void EdfPlus::_parse_time() {
+  std::vector<unsigned char> raw_time(raw.begin()+168, raw.begin()+168+16);
+  this->_starttime = Time(raw_time);
+}
+
+void EdfPlus::_parse_num_signals() {
+  std::string _num_signals_str(raw.begin()+252, raw.begin()+252+4);
+  this->_num_signals = std::stoi(_num_signals_str);
+}
+
+void EdfPlus::_parse_signal_names() {
+  auto _name_st = raw.begin() + 256;
+  auto _name_ed = _name_st + this->_num_signals * 16;
+  std::string _names_raw(_name_st, _name_ed);
+  std::vector<std::string> names_raw = absl::StrSplit(_names_raw, absl::ByString("  "));
+  for (auto name_raw : names_raw) {
+    std::string name{name_raw};
+    absl::RemoveExtraAsciiWhitespace(&name);
+    if (name.length() > 0) 
+      this->_signal_names.push_back(name);
+  }
+}
+
+void EdfPlus::_parse_signal_freqs() {
+  auto _freq_st = raw.begin() + 256 + this->_num_signals * 216;
+  auto _freq_ed = _freq_st + this->_num_signals * 8;
+  std::string _freq_raw(_freq_st, _freq_ed);
+  std::vector<std::string> freqs_raw = absl::StrSplit(_freq_raw, ' ');
+  for (auto freq_raw : freqs_raw) {
+    std::string freq{freq_raw};
+    absl::RemoveExtraAsciiWhitespace(&freq);
+    if (freq.length() > 0)
+      this->_signal_freqs.push_back(std::stoi(freq));
+  }
+}
+
+// TODO reconstruct with parse freqs
+std::vector<float> parse_minmax(std::string raw) {
+  std::vector<float> data;
+  std::vector<std::string> freqs_raw = absl::StrSplit(raw, ' ');
+  for (auto freq_raw : freqs_raw) {
+    std::string freq{freq_raw};
+    absl::RemoveExtraAsciiWhitespace(&freq);
+    if (freq.length() > 0)
+      data.push_back(std::stoi(freq));
+  }
+  return data;
+}
+
+void EdfPlus::_parse_physical_minimum() {
+  auto st = raw.begin() + 256 + this->_num_signals * 104;
+  auto ed = st + this->_num_signals * 8;
+  std::string raw(st, ed);
+  _physical_minimum = parse_minmax(raw);
+}
+
+void EdfPlus::_parse_physical_maximum() {
+  auto st = raw.begin() + 256 + this->_num_signals * (104 + 8);
+  auto ed = st + this->_num_signals * 8;
+  std::string raw(st, ed);
+  _physical_maximum = parse_minmax(raw);
+}
+
+void EdfPlus::_parse_digital_minimum() {
+  auto st = raw.begin() + 256 + this->_num_signals * (104 + 8 + 8);
+  auto ed = st + this->_num_signals * 8;
+  std::string raw(st, ed);
+  _digital_minimum = parse_minmax(raw);
+}
+
+void EdfPlus::_parse_digital_maximum() {
+  auto st = raw.begin() + 256 + this->_num_signals * (104 + 8 + 8 + 8);
+  auto ed = st + this->_num_signals * 8;
+  std::string raw(st, ed);
+  _digital_maximum = parse_minmax(raw);
+}
+
+
+
+inline int parse_sample(unsigned char byte1, unsigned char byte2) {
+  int16_t sample = static_cast<unsigned char>(byte1) |
+    static_cast<unsigned char>(byte2) << 8;
+  return int(sample);
+}
+
+std::vector<int> parse_samples(const std::vector<unsigned char>& record) {
+    std::vector<int> samples;
+    int num_bytes = record.size();
+    int num_samples = num_bytes / 2;
+    samples.reserve(num_samples);
+    for (int i = 0; i < num_bytes; i += 2) {
+      int sample = parse_sample(record[i], record[i+1]);
+      samples.push_back(sample);
+    }
+    return samples;
+};
+
+void EdfPlus::_parse_signals() {
+  // init _signals
+  for ( int i = 0; i < this->_num_signals; i++ ) {
+    std::vector<int> tmp;
+    (*this->_signals).push_back(tmp);
+  }
+  
+  // get raw signal data
+  auto _st_signals = raw.begin() + 256 + this->_signal_names.size() * 256;
+  std::vector<unsigned char> raw_signals(_st_signals, raw.end());
+
+  // parse raw
+  std::vector<int> samples = parse_samples(raw_signals);
+
+  // record size
+  int record_size = std::accumulate(this->_signal_freqs.begin(),
+				    this->_signal_freqs.end(),
+				    0); 
+  int signal_start = 0;
+  for (int signal_index = 0; signal_index < this->_num_signals; signal_index++) {
+    // dispatch each signal from samples
+    
+    int signal_freq = this->_signal_freqs[signal_index];
+    
+    for (int sample_index = signal_start;
+	 sample_index < int(samples.size());
+	 sample_index += record_size) {
+      for (int freq_index = 0; freq_index < signal_freq; freq_index++) {
+	int sample = samples[sample_index + freq_index];
+	(*this->_signals)[signal_index].push_back(sample);
+      }
+    }
+    signal_start += signal_freq;
+  }
+}
+
+void EdfPlus::_parse_data() {
+  _parse_time();
+  _parse_num_signals();
+  _parse_signal_names();
+  _parse_signal_freqs();
+  _parse_physical_minimum();
+  _parse_physical_maximum();
+  _parse_digital_minimum();
+  _parse_digital_maximum();
+  //  _parse_signals();
+}
+
+void EdfPlus::_parse_single_signal(int signal_index) {
+  _single_signal->clear();
+  
+  // get raw signal data
+  auto signals_st = raw.begin() + 256 + this->_signal_names.size() * 256;
+
+  // record size
+  int record_size = std::accumulate(this->_signal_freqs.begin(),
+				    this->_signal_freqs.end(),
+				    0);
+  int signal_freq = this->_signal_freqs[signal_index];
+  int raw_start = std::accumulate(this->_signal_freqs.begin(),
+				  this->_signal_freqs.begin() + signal_index,
+				  0) * 2;
+  //  std::cerr << "here: " << raw_start << '\n' << this->_signal_freqs[0] <<'\n';
+  for (auto raw_it = signals_st + raw_start;
+       raw_it < raw.end();
+       raw_it += record_size * 2) {
+    for (int freq_index = 0; freq_index < signal_freq; freq_index++) {
+      auto char1 = *(raw_it + freq_index*2);
+      auto char2 = *(raw_it + freq_index*2 + 1);
+      int sample = parse_sample(char1, char2);
+      //  std::cout << sample << '\n';
+      (*this->_single_signal).push_back(sample);
+    }
+  }
+  //  std::cerr << "parse single signal finished!" << '\n';
+}
+
+}

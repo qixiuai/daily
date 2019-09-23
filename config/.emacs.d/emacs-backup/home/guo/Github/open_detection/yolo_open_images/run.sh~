@@ -1,0 +1,8 @@
+
+#!/bin/bash
+
+export PATH=$PATH:/home/guo/Github/open_detection/darknet
+cfg_path=/home/guo/Github/open_detection/darknet/cfg/yolov3-openimages.cfg
+weight_path=yolov3-openimages.weights
+darknet detector test yolo.data ${cfg_path} ${weight_path}
+

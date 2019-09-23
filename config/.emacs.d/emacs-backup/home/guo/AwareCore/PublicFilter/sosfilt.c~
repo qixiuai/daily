@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <assert.h>
+
+void filter(double* y, double *x, int n, double* b, int nb, double* a, int na) {
+  double upper, lower;
+  upper = lower = 0;
+  for (int i=0; n-i>=0 && i<nb; i++) {
+    upper += b[i]*x[n-i];
+  }
+  for (int i=1; n-i>=0 && i<na; i++) {
+    lower += a[i]*y[n-i];
+  }
+  y[n] = upper - lower;
+}
+
+void vector_multiply(double *x, int len, double a) {
+  for (int i = 0; i < len; i++) {
+    x[i] = a * x[i];
+  }
+}
+
+// sos[n_sec][6]
+void sosg2sos(double* sos[6], int n_sections, double *g, int ng) {
+  assert(ng <= n_sections + 1);
+  if (ng == n_sections + 1) {
+    vector_multiply(sos[n_sections-1], 6, g[ng-1]);
+  }
+  ng -= 1;
+  for (int i = 0; i < ng; i++) {
+    vector_multiply(sos[i], 6, g[i]);
+  }
+}
+
+// sos: (n_sections, 6)
+double sosfilt(double * y, double *x, int n,
+	       double (*sos)[6], int n_sections) {
+  for (int i = 0; i < n_sections; i++) {
+    filter(y, x, n, sos[i], 3, &(sos[i][3]), 3);
+  }
+}
+
+
+int main() {
+  double x[] = {1.62434536, -0.61175641, -0.52817175, -1.07296862, 0.86540763, -2.3015387, 1.74481176, -0.7612069, 0.3190391, -0.24937038, 1.46210794, -2.06014071,  -0.3224172};
+  double y[13];
+  double sos[][6] = {{1,1,1,1,1,1}, {1,1,1,1,1,1}};
+  double g[] = {1, 2};
+  for (int i = 0; i < 13; i++) {
+    sosfilt(x, y, i, sos, 2);
+    printf("%f\t", y[i]);
+  }
+  return 0;
+}
+ 

@@ -1,0 +1,15 @@
+cc_binary(
+    name = "example",
+    srcs = ["example.cc"],
+    deps = [":edfpro_cc_proto"],
+)
+
+cc_proto_library(
+    name = "edfpro_cc_proto",
+    deps = [":edfpro_proto"],
+)
+
+proto_library(
+    name = "edfpro_proto",
+    srcs = ["edfpro.proto"],
+)

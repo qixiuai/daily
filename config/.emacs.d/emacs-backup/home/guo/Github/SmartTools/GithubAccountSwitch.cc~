@@ -1,0 +1,24 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+
+
+int switchGitconfig(string file) {
+  ifstream config(file);
+  if (!config) {
+    cout << file << endl;
+  } else {
+    cout << "config is true" << endl;
+  }
+  return 0;
+}
+
+
+int main() {
+  string config_file = "/home/guo/.gitconfig";
+  switchGitconfig(config_file);
+  return 0;
+}
+

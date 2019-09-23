@@ -1,0 +1,46 @@
+
+
+#include "findpeaks.h"
+
+class NoiseClassifier {
+public:
+  NoiseClassifier() {
+    peak_detector = PeakDetector(100, 400, 100, 0.9, 40, 4);
+  }
+  int classify(float sample) {
+    int peak_rate = peak_detector.run(sample);
+    if (peak_rate == 120) {
+      return 1;
+    }
+    return 0;
+  }
+  PeakDetector peak_detector;
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  NoiseClassifier* ClassifierInit() {
+    return new NoiseClassifier();
+  }
+  
+  int Classify(NoiseClassifier* classifer, float sample) {
+    return classifer->classify(sample);
+  }
+  
+  void ClassifierDestroy(NoiseClassifier* classifer) {
+    delete classifier;
+  }  
+  
+#ifdef __cplusplus
+}
+#endif
+
+
+
+
+
+
+
+
+

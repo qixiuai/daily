@@ -1,0 +1,45 @@
+#!/home/guo/anaconda3/bin/python
+
+import argparse
+
+
+def process_bcg(line, os):
+    if (line[20] != 'B'):
+        return;
+    line = line[22:-1]
+    samples = line.split(',')
+    for sample in samples:
+        os.write(sample+'\n')
+    return;
+    
+
+def process_pressure(line, os):
+    if (line[20] != 'P'):
+        return;
+    line = line[22:-1]
+    samples = line.split(',')
+    for sample in samples:
+        os.write(sample+'\n')    
+    pass
+
+def process(file_path):
+    bcg_file      = open("bcg.txt", 'w')
+    pressure_file = open("pressure.txt", 'w');
+    with open(file_path) as file:
+        for line in file:
+            if len(line) <= 5: continue;
+            line = line.strip();
+            process_bcg(line, bcg_file)
+            process_pressure(line, pressure_file)
+    bcg_file.close()
+    pressure_file.close();
+
+def main(args): return process(args.file_path)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Raw data file path")
+    parser.add_argument("--file_path", type=str,
+                        default="/home/guo/BCG/data/content_1000.txt",
+                        help="Raw data file path")
+    args = parser.parse_args()
+    main(args)

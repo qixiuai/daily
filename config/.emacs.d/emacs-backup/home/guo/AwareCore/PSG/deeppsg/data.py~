@@ -1,0 +1,174 @@
+from __future__ import print_function
+import argparse
+import torch
+import torch.utils.data
+from torch.utils.data import Dataset, DataLoader
+from collections import namedtuple
+from collections import Counter
+from scipy.signal import lfilter
+from scipy.signal import stft
+from scipy.signal import decimate
+from scipy.io import loadmat
+import numpy as np
+import pandas as pd
+import pyedflib
+import logging
+import time
+import pdb
+from glob import glob
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+def bandpass(signal, signal_type):
+    """
+    EEG [0.3 45]
+    EOG [0.3 12]
+    window based order 50 FIR
+    """
+    B = loadmat("coeff/{}_bandpass_b.mat".format(signal_type))['Num'].flatten()
+    A = [1]
+    return lfilter(B, A, signal)
+
+def downsample(signal):
+    """
+    down sample from signal with 500 Hz to 100Hz
+    """
+    return decimate(signal, q=5, ftype='fir')
+
+def load_signal(signal_label, signal_type, preprocess=True):
+    chn = signal_labels.index(signal_label)
+    signal = f.readSignal(chn)
+    start_ind = 210*500
+    dur = (34380 + 30) * 500
+    signal = signal[start_ind:start_ind+dur]
+    if not preprocess:
+        return signal
+    signal = bandpass(signal, signal_type)
+    signal = downsample(signal)
+    #spectrogram = signal_stft(signal)
+    return signal
+
+def load_edf(file_path, preprocess=True):
+    f = pyedflib.EdfReader(file_path)
+    signal_labels = f.getSignalLabels()
+    c4a1 = load_signal('C4-A1', 'EEG')
+    e1a2 = load_signal('ROC-LOC', 'EOG')
+    e2a1 = load_signal('LOC-ROC', 'EOG')
+    return np.stack([c4a1, e1a2, e2a1])
+
+def signal_stft(signal):
+    """
+    signal is downsampled from original with 100Hz
+    Zxx: (freqs, time)
+    """
+    freq, t, Zxx = stft(signal, fs=100, window="hamming", nperseg=128, noverlap=30)
+    assert(t.shape[0] == 32)
+    Zxx = Zxx[0:32, 0:32]
+    return np.abs(Zxx)
+
+
+def find_column_index(columns, column):
+    columns = map(str.lower, columns)
+    for 
+
+def load_label(file_path,
+               label_index={'MT':-1, 'W':0, 'S1':1, 'S2':2, 'S3':3, 'S4':3, 'R':4}):
+    df = pd.read_table(file_path, skiprows=21)
+    columns = df.columns.tolist()
+    
+    duration_name  = "Duration[s]"
+    stage_name     = "Sleep Stage"
+    timestamp_name = "Time [hh:mm:ss]"
+    
+    assert(duration_name  in columns)
+    assert(stage_name     in columns)
+    assert(timestamp_name in columns)
+    
+    dur_ind        = columns.index(duration_name)
+    stage_ind      = columns.index(stage_name)
+    timestamp_ind  = columns.index(timestamp_name)
+
+    stages         = list(df[df.iloc[:,dur_ind]==30].iloc[:,stage_ind])
+    timestamps     = list(df[df.iloc[:,dur_ind]==30].iloc[:,timestamp_ind])
+    timestamp_stages = {}
+    num_timestamps = len(timestamps)
+    for ind in range(num_timestamps):
+        timestamp = timestamps[ind]
+        stage     = stages[ind]
+        timestamp_stages[timestamp] = label_index[stage]
+    return timestamp_stages
+
+
+class CAPSleepDataset(Dataset):
+    """
+    """
+    def __init__(self, data_dir, is_train=True):
+        self.segment_len = 30; #30s
+        self.resolution = 100
+        sample_file = "n1.edf";
+        # data: (3, signal_len) 100Hz
+        data = load_edf(data_dir + sample_file);
+        label_file = "n1.txt";
+        labels = load_label(data_dir + label_file);
+        if is_train:
+            self.labels = labels[:25000]
+            self.data = data[:,:25000*100]
+        else:
+            self.labels = labels[25000:30000]
+            self.data = data[:,25000*100:30000*100]
+
+    def __len__(self):
+        return int(self.data.shape[1]/100-30+1);
+
+    def __getitem__(self, ind):
+        #NCHW
+        # (batch_size, 3, 32freqbins, 32timepoints);
+        start_ind = ind*self.resolution;
+        end_ind = (ind+self.segment_len)*self.resolution;
+        signals = self.data[:, start_ind:end_ind];
+        c4a1 = signal_stft(signals[0]);
+        e1a2 = signal_stft(signals[1]);
+        e2a1 = signal_stft(signals[1]);
+        labels = self.labels[ind:ind+self.segment_len];
+        label = labels[0];
+        if np.unique(labels).size != 1:
+            cnt = Counter();
+            for num in labels:
+                cnt[num] += 1;
+            label = cnt.most_common()[0][0]
+        x = torch.from_numpy(np.stack([c4a1, e1a2, e2a1])).type(torch.float32);
+        y = torch.tensor(label);
+        return x, y;
+
+class CommonDataset(Dataset):
+    def __init__(self, data, label):
+        self.data  = data
+        self.label = label
+
+    def __len__(self):
+        return self.data.shape[0]
+
+    def __getitem__(self, ind):
+        return (self.data[ind], self.lable[ind])
+
+
+def produce_data_file(data_dir):
+    edfs = glob(data_dir+"*.edf")
+    edfs.sort()
+    txts = glob(data_dir+"*.txt")
+    txts.sort()
+    num_file = len(edfs)
+    for i in range(num_file):
+        edf_file, txt_file = edfs[i], txts[i]
+        assert(edf_file[:-3]==txt_file[:-3])
+        yield edf_file, txt_file
+
+def makedataset(data_dir):
+    file_pairs = produce_data_file(data_dir)
+    for edf, txt in file_pairs:
+        anno = load_label(txt)
+
+if __name__ == '__main__':
+    data_dir = "/home/guo/AwareCore/PSG/database/capslpdb/"
+    makedataset(data_dir);

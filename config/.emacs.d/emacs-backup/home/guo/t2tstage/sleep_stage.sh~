@@ -1,0 +1,30 @@
+#!/bin/bash
+
+root_dir=/home/guo/data/sleepstage
+data_dir=${root_dir}/t2t_data
+model_dir=${root_dir}/t2t_model
+#rm -rf ${data_dir}
+rm -rf ${model_dir}
+
+usr_dir=/home/guo/t2tstage/stage
+
+#model=basic_fc_relu
+#model_param=sleepstage_basic
+
+model=shake_shake
+model_param=shakeshake_basic
+
+debug=False
+
+t2t-trainer \
+    --t2t_usr_dir=${usr_dir} \
+    --tfdbg=${debug} \
+    --generate_data \
+    --problem=stage_isruc \
+    --data_dir=${data_dir} \
+    --output_dir=${model_dir} \
+    --model=${model} \
+    --hparams_set=${model_param} \
+    --train_steps=1000000 \
+    --eval_steps=300 
+

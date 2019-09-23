@@ -1,0 +1,13 @@
+
+#ifndef _WRAPPER_
+#define _WRAPPER_
+
+struct NoiseClassifier;
+
+NoiseClassifier* ClassifierInit();
+
+int Classify(NoiseClassifier* classifer, float sample);
+  
+void ClassifierDestroy(NoiseClassifier* classifer);
+
+#endif

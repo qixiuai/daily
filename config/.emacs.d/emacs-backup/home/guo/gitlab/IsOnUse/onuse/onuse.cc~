@@ -1,0 +1,78 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+
+#include "onuse.h"
+
+class OnUseClassifier {
+public:
+  OnUseClassifier() {}
+  OnUseClassifier(int threshold) {
+    this->threshold = threshold;
+    this->medfilter = MedianFilter(31);
+    this->devfilter = DeviationFilter(1000);
+  }
+  int classifiy(float value) {
+    value = this->medfilter.filter(value);
+    float dev = this->devfilter.filter(value);
+    if (dev <= this->threshold) {// 5 is threshold
+      return 0;
+    }
+    return 1;
+  }
+
+private:
+  int threshold;
+  MedianFilter    medfilter;
+  DeviationFilter devfilter;
+};
+
+OnUseClassifier* ClassifierInit(int threshold) {
+  return new OnUseClassifier(threshold);
+}
+
+OnUseClassifier* TemperatureClassifierInit() {
+  return new OnUseClassifier(200);
+}
+
+OnUseClassifier* PressureClassifierInit() {
+  return new OnUseClassifier(3);
+}
+
+OnUseClassifier* AbdomenClassifierInit() {
+  return new OnUseClassifier(35);
+}
+
+OnUseClassifier* ChestClassifierInit() {
+  return new OnUseClassifier(35);
+}
+
+float classifiy(OnUseClassifier* classifier, float value) {
+  return classifier->classifiy(value);
+}
+
+void ClassifierDestruct(OnUseClassifier* classifier) {
+  delete classifier;
+}
+
+
+/*
+
+int main() {
+  ifstream file("/home/guo/gitlab/IsOnUse/data/signal.txt");
+  ofstream out("/home/guo/gitlab/IsOnUse/notebook/test.txt", std::ios::out);
+  if (!file) {
+    cerr << "file not found\n";
+  }
+  // temp:200 pressure:3 chest:35 abdomen:35
+  OnUseClassifier classifier(7);
+  string line;
+  while (file >> line) {
+    float value = std::stof(line);
+    int ret  = classifier.classifiy(value);
+    out << ret << '\n';
+  }
+  return 0;
+}
+/*

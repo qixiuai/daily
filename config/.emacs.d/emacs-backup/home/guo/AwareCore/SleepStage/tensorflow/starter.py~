@@ -1,0 +1,102 @@
+from __future__ import absolute_import, division, print_function
+
+import os
+import time
+import lmdb
+import numpy as np
+import tensorflow as tf
+#import tensorflow.contrib.eager as tfe
+
+import matplotlib.pyplot as plt
+
+tf.enable_eager_execution()
+
+import pdb
+
+
+def create_dataset(lmdb_dir):
+    env = lmdb.open(lmdb_dir)
+    with env.begin() as txn:
+        keys = [k for k, _ in txn.cursor()]
+    keys_x = list(filter(lambda k: k.decode('ASCII').endswith('x'), keys))
+    np.random.shuffle(keys_x)
+    num_example = len(keys_x)
+    data = np.zeros((num_example, 32, 32, 2), np.float32)
+    labels = np.zeros((num_example, ), np.int32)
+    with env.begin() as txn:
+        for (ind, key_of_x) in enumerate(keys_x):
+            key_of_label = key_of_x.decode('ASCII')[:-1] + 'y'
+            key_of_label = key_of_label.encode('ASCII')
+            x = txn.get(key_of_x)
+            label = txn.get(key_of_label)
+            data[ind]  = np.frombuffer(x, dtype=np.float32).reshape(2, 32, 32).transpose((1,2,0))
+            labels[ind] = int(label.decode('ASCII'), 2)
+    dataset = tf.data.Dataset.from_tensor_slices((data, labels))
+    dataset = dataset.shuffle(num_example).batch(64)
+    return dataset
+
+class CNN(tf.keras.Model):
+    def __init__(self):
+        super(CNN, self).__init__()
+        self.conv1 = tf.keras.layers.Conv2D(32, (3,3), padding='valid', use_bias=True,
+                                            kernel_initializer='glorot_uniform')
+        self.conv2 = tf.keras.layers.Conv2D(32, (3,3), padding='valid', use_bias=True,
+                                            kernel_initializer='glorot_uniform')
+        self.conv3 = tf.keras.layers.Conv2D(32, (3,3), padding='valid', use_bias=True, strides=(2, 2),
+                                            kernel_initializer='glorot_uniform')
+        self.conv4 = tf.keras.layers.Conv2D(64, (3,3), padding='valid', use_bias=True,
+                                            kernel_initializer='glorot_uniform')
+        self.conv5 = tf.keras.layers.Conv2D(64, (3,3), padding='valid', use_bias=True,
+                                            kernel_initializer='glorot_uniform')
+        self.conv6 = tf.keras.layers.Conv2D(64, (3,3), padding='valid', use_bias=True, strides=(2, 2),
+                                            kernel_initializer='glorot_uniform')
+        self.conv7 = tf.keras.layers.Conv2D(64, (4,4), padding='valid', use_bias=True,
+                                            kernel_initializer='glorot_uniform')
+        self.conv8 = tf.keras.layers.Conv2D(5, (1,1), padding='valid', use_bias=True,
+                                            kernel_initializer='glorot_uniform')
+        self.flatten = tf.keras.layers.Flatten()
+        self.fc1 = tf.keras.layers.Dense(5)
+
+    def call(self, x, training=True):
+        x = tf.nn.relu(self.conv1(x))
+        x = tf.nn.relu(self.conv2(x))
+        x = tf.nn.relu(self.conv3(x))
+        x = tf.nn.relu(self.conv4(x))
+        x = tf.nn.relu(self.conv5(x))
+        x = tf.nn.relu(self.conv6(x))
+        x = tf.nn.relu(self.conv7(x))
+        x = tf.nn.relu(self.conv8(x))
+        x = self.flatten(x)
+        x = self.fc1(x)
+        return x
+        
+def train(dataset, epochs):
+    model = CNN()
+    model.call = tf.contrib.eager.defun(model.call)
+    optimizer = tf.train.AdamOptimizer(1e-4)
+#    optimizer = tf.train.GradientDescentOptimizer(1e-4)
+#    optimizer = tf.train.MomentumOptimizer(1e-4, momentum=0.9, use_nesterov=True)
+    for epoch in range(epochs):
+        start = time.time()
+        loss_total = 0
+        i = 0
+        for samples, labels in dataset:
+            with tf.contrib.eager.GradientTape() as tape:
+                logits = model(samples)
+                loss = tf.losses.softmax_cross_entropy(tf.one_hot(labels, depth=5), logits)
+            gradients = tape.gradient(loss, model.variables)
+            optimizer.apply_gradients(zip(gradients, model.variables))
+            i+=1
+            loss_total += loss
+        print("loss: {}\tTime taken for epoch {} is {} sec".format(loss_total/i, epoch+1, time.time()-start))
+
+        
+def main():
+    lmdb_dir = "/home/guo/AwareCore/SleepStage/lmdbs/capslpdb_lmdb/"
+    start = time.time()
+    dataset = create_dataset(lmdb_dir)
+    print("create dataset finished with {} secs".format(time.time()-start))
+    train(dataset, 100)
+
+if __name__ == "__main__":
+    main()

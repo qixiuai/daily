@@ -1,0 +1,71 @@
+
+#ifndef BURN_HEART_REPORT_H_
+#define BURN_HEART_REPORT_H_
+
+#include <map>
+#include <string>
+#include <vector>
+
+namespace burn {
+
+  class HeartReport {
+  public:
+    struct StageHeartRate {
+      int stage;
+      std::vector<float> heart_rates;
+      StageHeartRate(int stage, std::vector<float> heart_rates) {
+	this->stage = stage;
+	this->heart_rates = heart_rates;
+      }
+    };
+    typedef std::vector<StageHeartRate> StageHeartRates;
+    
+    struct Args {
+      StageHeartRates stage_heart_rates;
+      int sleep_onset_epoch_id;
+      int close_light_next_epoch_id;
+      int open_light_prev_epoch_id;
+      
+      Args(StageHeartRates stage_heart_rates,
+	   int sleep_onset_epoch_id,
+	   int close_light_next_epoch_id,
+	   int open_light_prev_epoch_id) {
+	this->stage_heart_rates = stage_heart_rates;
+	this->sleep_onset_epoch_id = sleep_onset_epoch_id;
+	this->close_light_next_epoch_id = close_light_next_epoch_id;
+	this->open_light_prev_epoch_id = open_light_prev_epoch_id;
+      }
+    };
+    
+    struct HREpoch {
+      float min;
+      float max;
+      HREpoch(float min, float max) {
+	this->min = min;
+	this->max = max;
+      }
+    };
+    typedef std::vector<HREpoch> HREpochs;
+    
+    struct Rets {
+      HREpochs hr_epochs;
+      std::map<std::string, float> table;
+    };
+
+    HeartReport(Rets* rets, const Args* args): args_{args}, rets_{rets} {}
+    void Run();
+
+  private:
+    const Args* args_;
+    Rets* rets_;
+  };
+
+  // prates
+  HeartReport::StageHeartRates
+  GenerateStageHeartRates(const std::vector<int>& stages,
+			  const std::vector<float>& heart_rates);
+  
+}
+
+
+#endif

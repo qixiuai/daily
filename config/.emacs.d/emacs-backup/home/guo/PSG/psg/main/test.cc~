@@ -1,0 +1,21 @@
+#include <thread>
+#include <iostream>
+
+
+void hello_loop() {
+  std::cout << "Hello World" << std::endl;
+  while (true) {
+  }
+}
+
+void run_thread() {
+  std::thread t(hello_loop);
+  std::cout << "run thread" << std::endl;
+  t.detach();
+}
+
+int main() {
+  run_thread();
+  std::cout << "main" << std::endl;
+  return 0;
+}

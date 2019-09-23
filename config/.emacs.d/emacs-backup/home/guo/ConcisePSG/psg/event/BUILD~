@@ -1,0 +1,15 @@
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+ 
+licenses(["notice"])
+
+cc_library(
+    name = "events",
+    hdrs = ["events.h"],
+    copts = ["-std=c++17"],
+    deps = [":"],
+)
+
+

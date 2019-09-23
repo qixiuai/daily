@@ -1,0 +1,75 @@
+#ifndef _PSG_API_DATA
+#define _PSG_API_DATA
+
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <cpprest/json.h>
+
+namespace Comm {
+
+  struct Event {
+    int start;
+    int end;
+    std::string signal_name;
+    Event(int st, int ed, std::string name) {
+      start = st;
+      end = ed;
+      signal_name = name;
+    }
+  };
+  
+  using Events = std::vector<Event>;
+  
+  std::string to_string(const Events& events) {
+    std::string msg;
+    for (auto evt : events) {
+      msg.append(std::to_string(evt.start) + ',');
+      msg.append(std::to_string(evt.end) + ',');
+      msg.append(evt.signal_name + '\n');
+    }
+    return msg;
+  }
+  
+  struct PSGEvents {
+    Events arousal;
+    Events leg;
+    Events resp;
+    Events heart;
+    Events spo2;
+    Events stage;
+  };
+
+  using Reports = std::unordered_map<std::string, float>;
+
+  using ChartEpoch = std::pair<float, float>;
+    
+  struct Chart {
+    std::vector<ChartEpoch> spo2;
+    std::vector<ChartEpoch> hr;
+    std::vector<ChartEpoch> oa;
+    std::vector<ChartEpoch> ca;
+    std::vector<ChartEpoch> ma;
+    std::vector<ChartEpoch> hyp;
+
+    std::vector<int> pose;
+    std::vector<int> stage;
+  };
+        
+  struct PSGComm {
+    PSGEvents events;
+    Reports   report;
+    Chart     chart;
+  };
+
+  using DB = std::unordered_map<std::string, PSGComm>;
+
+  /*
+  web::json::value getDB(std::string key) {}
+  void postDB(DB& db, web::json::value& client) {}
+  */
+  
+}
+
+#endif

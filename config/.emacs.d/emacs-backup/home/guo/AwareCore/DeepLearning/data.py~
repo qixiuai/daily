@@ -1,0 +1,51 @@
+import os
+import numpy as np
+
+
+class Labeler:
+    """
+    automatic label data
+    """
+    def __init__(self, upper_bound):
+        """
+        only support upper_bound
+        """
+        self.__upper_bound_ = upper_bound;
+        
+    def label_data(self, data):
+        data_len = len(data);
+        label    = np.zeros(data_len);
+        last_peak_index = 0;
+        for ind in range(data_len):
+            if data[ind] >= self.__upper_bound_:
+                if (ind < last_peak_index + 500):
+                    amplitude_last_peak = data[last_peak_index];
+                    amplitude_current   = data[ind];
+                    if (amplitude_current < amplitude_last_peak):
+                        continue;
+                    else:
+                        label[last_peak_index] = 0;
+                        
+                else:
+                    label[ind] = 1;
+
+        return label;
+
+    
+def load_data(file_path):
+    with open(file_path) as file:
+        data = file.read();
+    data = data.strip().split('\n');
+    data = list(map(int, data));
+    return data;
+
+def main(file_path):
+    data        = load_data(file_path);
+    upper_bound = 2800;
+    labeler     = Labeler(upper_bound);
+    Y           = labeler.label_data(data);
+    print(np.sum(Y))
+    
+if __name__ == '__main__':
+    file_path = "data/glt.txt"
+    main(file_path)

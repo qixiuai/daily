@@ -1,0 +1,32 @@
+#ifndef _BCG_
+#define _BCG_
+
+#include <string>
+#include <vector>
+#include "filter.h"
+#include "findpeaks.h"
+
+class BCGFramework {
+public:
+  MedianFilter<double> medfilter_low;
+  
+  PeakDetector resp_detector;
+  PeakDetector heart_detector;
+  
+  BCGFramework() {}
+ 
+  BCGFramework(int Fz) {
+    //std::string data_dir = "coeffs/";
+    //std::string lowpass_a = data_dir + "lowpass_a.csv";
+    //std::string lowpass_b = data_dir + "lowpass_b.csv";
+    //    this->lowpass   = Filter<double>(lowpass_b,  lowpass_a);
+    this->medfilter_low = MedianFilter<double>(21);
+    this->resp_detector  = PeakDetector(Fz, 25*Fz, 1*Fz, 0.85, 1*Fz, 16);
+  }
+  int run(int value);
+};
+
+
+#endif
+
+

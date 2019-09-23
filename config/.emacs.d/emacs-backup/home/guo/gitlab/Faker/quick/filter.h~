@@ -1,0 +1,59 @@
+
+#ifndef _FILTER_
+#define _FILTER_
+
+#include <algorithm>
+#include "boost/circular_buffer.hpp"
+
+template <class T>
+using Buffer = boost::circular_buffer<T>;
+
+
+
+class Filter {
+public:
+  Filter() = default;
+  Filter(int window_size) : window_size{window_size} {
+    buffer = Buffer<float>(window_size);
+  }
+  virtual float filter(float sample) {
+    return 0.0;
+  }
+  
+  int window_size;
+  Buffer<float> buffer;
+};
+
+
+class MeanFilter: public Filter {
+public:
+  MeanFilter(int window_size) : Filter(window_size) {}
+  float filter(float sample) override {
+    _sum += sample;
+    if (buffer.full()) {
+      _sum -= buffer.front();
+    }
+    buffer.push_back(sample);
+    return  _sum / buffer.size();
+  }
+
+private:
+  float _sum = 0;
+};
+
+class MedianFilter : public Filter {
+public:
+  MedianFilter(int window_size) : Filter(window_size) {}
+  float filter(float sample) override {
+    buffer.push_back(sample);
+    std::vector<float> vec(buffer.begin(), buffer.end());
+    std::nth_element(vec.begin(), vec.begin() + vec.size()/2, vec.end());
+    return vec[vec.size()/2];
+  }
+};
+
+
+
+
+
+#endif

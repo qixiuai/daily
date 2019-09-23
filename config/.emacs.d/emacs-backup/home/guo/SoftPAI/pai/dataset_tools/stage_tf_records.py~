@@ -1,0 +1,22 @@
+
+import tensorflow as tf
+from pai.utils import dataset_util
+
+
+def tf_example_from_dict(dt):
+    """
+    dt: {"channel0": [], "channel1": [], "label": [], "step": 1, "db": "isruc", "subject_id": id, "index": 100}
+    """
+    feature_map = {}
+    for key, value in dt.items():
+        feature_map[key] = dataset_util.tf_feature(value)
+    return tf.train.Example(features=tf.train.Features(feature=feature_map))
+
+
+
+
+
+
+
+
+

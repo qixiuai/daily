@@ -1,0 +1,11 @@
+#include "Ring.h"
+
+#include <iostream>
+
+using namespace std;
+
+int main() {
+  Ring<int> ring(5);
+  
+  return 0;
+}

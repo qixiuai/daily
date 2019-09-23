@@ -1,0 +1,83 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import numpy as np
+import autopeaks
+
+from collections import deque
+
+
+class Peak(object):
+
+    def __init__(self, index, value):
+        self.index = index
+        self.value = value
+        self.prev_peak = None
+        self.next_peak = None
+
+        self.is_R = False
+        self.prev_R = 0
+        self.next_R = 0
+
+
+def candidate_peaks(bcg):
+    auto_peaks = autopeaks.AutoPeaks(thres=0.65, min_dist=50, buffer_size=500)
+    list(map(auto_peaks.findpeaks, bcg))
+    indices, values = auto_peaks.peak_indexes, auto_peaks.peak_values
+    return indices, values
+
+
+def draft_peaks(bcg):
+    auto_peaks = autopeaks.AutoPeaks(thres=0.72, min_dist=300, buffer_size=2000)
+    list(map(auto_peaks.findpeaks, bcg))
+    indices, values = auto_peaks.peak_indexes, auto_peaks.peak_values
+    return indices, values
+
+
+def heuristiceaks():
+    pass
+
+
+def align_peaks(bcg_peaks, ecg_peaks):
+    """
+    default peak index match
+    """
+    pass
+
+
+def identify_error_region(bcg_peaks, ecg_peaks):
+    pass
+
+
+def repair_error_region(bcg_peaks, ecg_peaks):
+    pass
+
+
+def find_closest_index(bcg_peaks_indices, ecg_peak_index):
+    ind = np.argmin(np.abs(np.asarray(bcg_peaks_indices - ecg_peak_index)))
+    return bcg_peaks_indices[ind]
+
+
+def error_baseline(errors):
+    num_error = len(errors)
+    kernel_size = 60
+    baseline = []
+    for i in range(num_error):
+        pass
+        
+
+def error_peaks(bcg_peaks_indices, ecg_peaks_indices):
+    num_ecg_peaks = len(ecg_peaks_indices)
+    errors = []
+    for ecg_peak_index in ecg_peaks_indices:
+        bcg_peak_index = find_closest_index(bcg_peaks_indices, ecg_peak_index)
+        error = bcg_peak_index - ecg_peak_index
+        errors.append(error)
+    return errors
+
+
+
+
+

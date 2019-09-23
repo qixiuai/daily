@@ -1,0 +1,12 @@
+#include "respiratoryrate_wrapper.h"
+#include "findpeaks.h"
+
+PeakDetector* respiratorydetector_construct(int Fz) {
+  return new PeakDetector(Fz, Fz*22, 95, 0.78, 85, 21);
+}
+int respiratorydetector_run(PeakDetector* resp, int value) {
+  return resp->run(value);
+}
+void respiratorydetector_destruct(PeakDetector* resp) {
+  delete resp;
+}

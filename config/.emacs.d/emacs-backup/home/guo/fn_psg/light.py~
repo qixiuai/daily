@@ -1,0 +1,56 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from ops import ops
+
+class LightOps(ops.Operation):
+
+    def inputs(self):
+        return ["session/metasignals/signals/light"]
+
+    def outputs(self):
+        return []
+
+    def index_of_event(self, light):
+        raise NotImplementedError()
+    
+    def body(self, inputs):
+        ind = self.index_of_event()
+        event_time = starttime + timedelta(seconds=ind)
+        return {"event_name": event_time}
+        
+
+class LightOpen(LightOps):
+
+    def index_of_event(self, light):
+        for ind in range(len(light)):
+            sample = light[ind]
+            if sample == 2:
+                return ind
+
+
+class LightClose(LightOps):
+
+    def index_of_event(self, light):
+        for ind in reversed(range(len(light))):
+            sample = light[ind]
+            if sample == 1:
+                return ind
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

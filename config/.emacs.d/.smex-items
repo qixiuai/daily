@@ -1,0 +1,25 @@
+
+;; ----- smex-history -----
+(
+ linum-mode
+ line-number-mode
+ package-install
+ xml-mode
+ c++-mode
+ python-mode
+ package-list-packages
+)
+
+;; ----- smex-data -----
+(
+ (package-install . 15)
+ (package-list-packages . 2)
+ (javascript-mode . 3)
+ (bazel-mode . 2)
+ (jsx-mode . 1)
+ (python-mode . 1)
+ (c++-mode . 1)
+ (xml-mode . 1)
+ (line-number-mode . 4)
+ (linum-mode . 2)
+)

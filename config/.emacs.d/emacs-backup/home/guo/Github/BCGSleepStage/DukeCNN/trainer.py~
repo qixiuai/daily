@@ -1,0 +1,37 @@
+""" train the CNN model """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import tensorflow as tf
+
+import gin
+
+from absl import app
+from absl import logging
+
+from dataset import IsrucDataset
+from model import DukeCNN
+
+
+class Trainer(object):
+    """ Trainer """
+    
+   def __init__(self):
+       pass
+
+   def train(self):
+       dataset = IsrucDataset(ecg=True)()
+       model = DukeCNN(debug=True)()
+       model.compile()
+       mode.fit(dataset)
+
+def main(argv):
+    del argv
+    trainer = Trainer()
+    trainer.run()
+
+
+if __name__ == "__main__":
+    app.run(main)

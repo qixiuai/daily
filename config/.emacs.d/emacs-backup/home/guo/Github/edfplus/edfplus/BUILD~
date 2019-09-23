@@ -1,0 +1,24 @@
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+
+cc_test(
+    name = "edfplus_test",
+    deps = [":edfplus"],
+)
+
+cc_binary(
+    name = "test",
+    srcs = [],
+    deps = [":edfplus"]
+)
+
+cc_library(
+    name = "edfplus",
+    srcs = ["edfplus.cc"],
+    hdrs = ["edfplus.h"],
+)

@@ -1,0 +1,38 @@
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
+cc_binary(
+    name = "server",
+    srcs = ["main.cc", "server.cc", "server.h"],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows" : [],
+        "//conditions:default" : ["-lpthread", "-lboost_system", "-lcpprest", "-lssl", "-lcrypto"],
+    }),
+#    data = ["//psg/lib/stage:saved_models"],
+    deps = select({
+        "@bazel_tools//src/conditions:windows" : ["//third_party/cpprest:cpprest", ],
+        "//conditions:default" : [], 
+    })  +  
+      [
+          "//burn:burn",
+          "@com_google_absl//absl/strings",
+      ],
+)
+
+cc_binary(
+    name = "client",
+    srcs = ["client.cc"],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows" : [],
+        "//conditions:default" : ["-lpthread", "-lboost_system", "-lcpprest", "-lssl", "-lcrypto"],
+    }),
+    deps = select({
+        "@bazel_tools//src/conditions:windows" : ["//third_party/cpprest:cpprest", ],
+        "//conditions:default" : [], 
+    }),
+)
+

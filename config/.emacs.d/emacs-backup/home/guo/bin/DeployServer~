@@ -1,0 +1,2 @@
+#!/bin/bash
+sudo /home/guo/anaconda3/bin/python /home/guo/AwareDeploy/django/AwareVisual/manage.py runserver 192.168.4.3:80

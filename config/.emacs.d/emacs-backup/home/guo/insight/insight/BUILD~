@@ -1,0 +1,16 @@
+
+cc_binary(
+    name = "insight_test",
+    srcs = ["insight_test.cc"],
+    deps = [":insight"],
+)
+
+cc_library(
+    name = "insight",
+    srcs = ["insight.cc"],
+    hdrs = ["insight.h"],
+    deps = [
+        "//insight/protobuf:event_cc_proto",
+#        "@com_google_protobuf",
+    ],
+)

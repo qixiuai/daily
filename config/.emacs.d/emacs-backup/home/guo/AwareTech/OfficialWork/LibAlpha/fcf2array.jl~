@@ -1,0 +1,13 @@
+#!/home/guo/Github/julia/julia
+
+@assert length(ARGS) == 1
+
+bcf_file = ARGS[1]
+
+open(bcf_file) do file
+    lines = readlines(file)
+    println(lines[15:20])
+    lines = lines[15:end]
+    ret = join(lines, ',')
+    prinln(lines)
+end

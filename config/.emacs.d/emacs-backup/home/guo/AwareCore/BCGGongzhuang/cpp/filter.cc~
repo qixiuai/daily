@@ -1,0 +1,148 @@
+#include <algorithm>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <boost/circular_buffer.hpp>
+#include "filter.h"
+
+template <class T>
+using buffer = boost::circular_buffer<T>;
+using std::vector, std::string;
+
+vector<double> load_csv(string path) {
+  std::fstream in(path);
+  if (!in.is_open()) {
+    std::cout << path << " not found!" << std::endl;
+    exit(0);
+  }
+  vector<double> coeff;
+  string line;
+  while (getline(in, line)) {
+    string val_str = "";    
+    while (line.length() > 0) {
+      if (line[0] == ',') {
+	coeff.push_back(std::stof(val_str));
+	val_str = "";
+      } else {
+	val_str += line[0];
+      }
+      line = line.substr(1);
+    }
+    if (val_str.length() > 0) {
+      coeff.push_back(std::stof(val_str));
+    }
+  }
+  return coeff;
+}
+
+template <class T>
+class Filter {
+public:
+  Filter() = delete;
+  Filter(string B_path, string A_path);
+  Filter(vector<double> B, vector<double> A);
+  double realtime_filter(T value);
+private:
+  vector<double> B;
+  vector<double> A;
+  buffer<T>     X;
+  buffer<double> Y;
+};
+
+template <class T>
+Filter<T>::Filter(vector<double> B, vector<double> A){
+  this->B = B;
+  this->A = A;
+  this->X = buffer<T>(B.size());
+  this->Y = buffer<double>(A.size());
+}
+
+template <class T>
+Filter<T>::Filter(string B_path, string A_path) {
+  auto B = load_csv(B_path);
+  auto A = load_csv(A_path);
+  Filter(B, A);
+}
+
+template <class T>
+double Filter<T>::realtime_filter(T value) {
+  this->X.push_back(value);
+  double upper, lower;
+  upper = lower = 0;
+  auto nb = this->B.size();
+  auto na = this->A.size();
+  auto n  = this->X.size()-1;
+  for (uint i=0; n-i>=0 && i<nb; i++) {
+    upper += this->B[i]*this->X[n-i];
+  }
+  for (uint i=1; n-i>=0 && i<na; i++) {
+    lower += this->A[i]*this->Y[n-i+1];
+  }
+  double y = upper - lower;
+  this->Y.push_back(y);
+  return y;
+}
+
+template <class T>
+class MedianFilter {
+public:
+  MedianFilter(int kernel_size){
+    this->kernel_size = kernel_size;
+    this->X = buffer<T>(kernel_size);
+  }
+  double realtime_filter(T value);
+  
+private:  
+  buffer<T> X;
+  int kernel_size;
+};
+
+template <class T>
+double MedianFilter<T>::realtime_filter(T value) {
+  this->X.push_back(value);
+  vector<T> vec;
+  vec.reserve(this->X.size());
+  for (auto x : this->X)
+    vec.push_back(x);
+  int vec_size = vec.size();
+  std::sort(vec.begin(), vec.end());
+  auto div_ret = div(vec_size, 2);
+  if (div_ret.rem == 0)
+    return vec[vec_size/2];
+  return (vec[vec_size/2] + vec[vec_size/2+1]) / 2.0;
+}
+
+/*
+
+vector<int> load_signal(string file_path) {
+  std::fstream in(file_path);
+  if (!in.is_open()) {
+    std::cout << file_path << " is not found\n";
+  }
+  vector<int> signal;
+  string line;
+  while (getline(in, line)) {
+    signal.push_back(std::stoi(line));
+  }
+  return signal;
+}
+
+int main() {
+  vector<double> b = load_csv("/home/guo/AwareCore/BCGGongzhuang/coeffs/lowpass_b.csv");
+  vector<double> a = load_csv("/home/guo/AwareCore/BCGGongzhuang/coeffs/lowpass_a.csv");
+  auto lowpass = Filter<double>(b, a);
+  vector<int> signal = load_signal("/home/guo/AwareCore/BCGGongzhuang/data/parsed_heart[110]-hx[15].txt");
+  auto median_filter = MedianFilter<int>(101);  
+  
+  for (auto v : signal) {
+    auto v_med = median_filter.realtime_filter(v);
+    auto v_low = lowpass.realtime_filter(v_med);
+    std::cout << v_low << '\n';
+  }
+  
+  //  std::cout << std::endl;
+  return 0;
+}
+
+*/

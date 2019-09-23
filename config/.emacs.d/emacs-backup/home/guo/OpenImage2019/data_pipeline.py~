@@ -1,0 +1,65 @@
+
+import numpy as np
+import cv2
+from absl import app as absl_app
+from absl import flags
+from absl import logging
+
+
+def get_all_anchors(stride=1, sizes=1, ratios=1, max_size=1):
+    pass
+
+
+def filter_boxes_inside_shape(featuremap_anchors_flatten, shape):
+    pass
+
+
+class DataPreprocessor(object):
+
+    def __init__(self, params):
+        self.params = params
+        self.num_anchor = 10
+
+    def get_anchor_labels(self, inside_anchors, boxes):
+        pass
+
+    def get_rpn_anchor_input(self, image, boxes):
+        boxes = boxes.copy()
+        all_anchors = get_all_anchors()
+        featuremap_anchors_flatten = all_anchors.reshape((-1, 4))
+        inside_ind, inside_anchors = filter_boxes_inside_shape(featuremap_anchors_flatten, image.shape[:2])
+        anchor_labels, anchor_gt_boxes = self.get_anchor_labels(inside_anchors, boxes)
+
+        anchorH, anchorW = all_anchors.shape[:2]
+        featuremap_labels = -np.ones((anchorH * anchorW * self.num_anchor, ), dtype="int32")
+        featuremap_labels[inside_ind] = anchor_labels
+        featuremap_labels = featuremap_labels.reshape((anchorH, anchorW, self.num_anchor))
+        featuremap_boxes = np.zeros((anchorH * anchorW * self.num_anchor, 4), dtype="float32")
+        featuremap_boxes[inside_ind, :] = anchor_gt_boxes
+        featuremap_boxes = featuremap_boxes.reshape((anchorH, anchorW, self.num_anchor, 4))
+        return featuremap_labels, featuremap_boxes
+
+    def __call__(self, inputs):
+        image_path, boxes, labels  = inputs["image_path"], inputs["boxes"], inputs["labels"]
+        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        assert image is not None, image_path
+        height, width = image.shape[:2]
+        # change box to absolute coordinate
+        boxes[:, 0::2] *= width
+        boxes[:, 1::2] *= height
+
+        # data augmentation
+        # TODO
+
+        ret = {"image": image, "gt_boxes": boxes, "gt_labels": labels}
+        ret["anchor_labels"], ret["anchor_boxes"] = self.get_rpn_anchor_input(image, boxes)
+        return ret
+
+
+def main(_):
+    preprocessor = DataPreprocessor()
+
+    
+if __name__ == "__main__":
+    logging.set_verbosity(logging.DEBUG)
+    absl_app.run(main)

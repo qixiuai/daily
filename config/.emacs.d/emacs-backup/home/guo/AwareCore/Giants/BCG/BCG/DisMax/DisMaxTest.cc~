@@ -1,0 +1,14 @@
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+
+#include "DisMax.h"
+#include "gtest/gtest.h"
+
+int main () {
+  std::cout << "Start DisMaxTest...\n";
+
+  return 0;
+}

@@ -1,0 +1,11 @@
+
+from object_detection.utils import label_map_util
+
+def check_label_maps():
+    tf_model_dir = "/home/guo/Github/tensorflow_models/research/object_detection/"
+    LABEL_MAP_PATH = tf_model_dir + "data/oid_v4_label_map.pbtxt"
+    category_index = label_map_util.create_category_index_from_labelmap(LABEL_MAP_PATH, use_display_name=True)
+    
+    
+
+

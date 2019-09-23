@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# change files under a directory
+# change *.cpp to *.cc
+
+DIR=$1
+DIR=$(realpath $DIR)
+echo "Will change files under" $DIR
+
+files=$(ls *.cpp $DIR)
+for file in files; do
+    echo $file
+done
+

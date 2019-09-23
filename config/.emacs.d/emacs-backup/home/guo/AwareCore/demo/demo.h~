@@ -1,0 +1,14 @@
+
+#ifdef __cplusplus;
+extern "C" {
+#endif
+  
+int* demo_construct();
+
+void increment(int* p);
+
+void demo_destruct(int * p);
+
+#ifdef __cplusplus
+}
+#endif

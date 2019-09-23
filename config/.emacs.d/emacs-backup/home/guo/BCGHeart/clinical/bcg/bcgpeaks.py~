@@ -1,0 +1,26 @@
+
+import autopeaks
+
+from collections import deque
+
+
+class BCGPeaks(object):
+
+    def __init__(self):
+        self.intervals = deque()
+        self._buffer = []
+        
+    def reset(self):
+        pass
+
+    def set_signal_end(self):
+        pass
+
+    def findpeaks(self, sample):
+        pass
+
+
+
+
+
+

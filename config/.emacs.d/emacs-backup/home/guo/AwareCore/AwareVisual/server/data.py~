@@ -1,0 +1,6 @@
+# methods to process Pressure / BCG data
+
+#
+def segment2point(buf):
+    seg = buf[16:-7]
+    return (buf, seg)

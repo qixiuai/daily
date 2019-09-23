@@ -1,0 +1,53 @@
+
+from glob import glob
+
+import pdb
+import json
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+
+
+class LabelManager(object):
+    
+    def __init__(self):
+        label_dir = "/home/guo/data/kaggle/OpenImage2019/"
+        bbox = pd.read_csv(label_dir+"challenge-2019-train-detection-bbox.csv")
+        imagelabels = pd.read_csv(label_dir+"challenge-2019-train-detection-human-imagelabels.csv")
+        json_file = label_dir + "challenge-2019-label500-hierarchy.json"
+        with open(json_file, "r") as f:
+            hierarchy = json.loads(f)
+        class_description = pd.read_csv(label_dir+"challenge-2019-classes-description-500.csv")
+        
+        
+    def __item__(self, filename):
+        pass
+
+def parse_image(filepath):
+    parts = tf.strings.split(filepath, "/")
+    label = parts[-1]
+    image = tf.io.read_file(filepath)
+    image = tf.image.decode_jpeg(image)
+    image = tf.image.convert_image_dtype(image, tf.float32)
+    image = tf.image.resize(image, [128, 128])
+    return image, label
+
+def normalize(image):
+    return image
+
+def preprocess(file):
+    image, label = parse_image(file)
+    image = normalize(image)
+    return image, label
+
+def get_dataset(data_dir):
+    dataset = tf.data.Dataset.list_files(data_dir+"*.jpg")
+    return dataset
+
+
+if __name__ == "__main__":
+    data_dir = "/home/guo/data/kaggle/OpenImage2019/demo/train/"
+    dataset = get_dataset(data_dir).map(preprocess, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    for image, label in dataset:
+        print(image.shape, label)
+

@@ -1,0 +1,37 @@
+#!/bin/env python
+import os
+import argparse
+from ctypes import * #cdll
+
+from scipy.io import loadmat
+from .spl import filtfilt
+
+import numpy as np
+from scipy import fftpack
+
+if os.name == 'posix':
+    libNotch = cdll.LoadLibrary("psg/spl/shared/libNotch.so")
+else:
+    raise Exception("Platform not detected!");
+
+def Bandpass20_38(x):
+    SOS = loadmat("psg/spl/coefficients/bandpass20_38/SOS.mat")["SOS"]
+    G   = loadmat("psg/spl/coefficients/bandpass20_38/G.mat")["G"]
+    x = np.asarray(x)
+    x = x.reshape(x.shape[0], 1)
+    y = filtfilt.sosgfilt(SOS, G, x)
+    return y.tolist()
+
+def Notch(x):
+    sz = len(x)
+    x_array = (c_float * sz)(*x)
+    y = [0 for i in x];
+    y_array = (c_float * sz)(*y)
+    for i in range(sz):
+        libNotch.Notch(y_array, x_array, c_int(i));
+    return list(y_array);
+
+def FFTTransform(sample_rate, x):
+    X = fftpack.fft(x)
+    freqs = fftpack.fftfreq(len(x)) * sample_rate
+    return (freqs, np.abs(X));

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+tf_model_dir=/home/guo/Github/tensorflow_models/research/object_detection/
+python ${tf_model_dir}/dataset_tools/create_pet_tf_record.py \
+       --label_map_path=pet_label_map.pbtxt \
+       --data_dir=../data/ \
+       --output_dir=../data/tf_records
+

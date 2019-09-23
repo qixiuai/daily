@@ -1,0 +1,5 @@
+[user]
+	email = zhmz90@gmail.com
+	name = Lanting Guo
+[core]
+	editor = emacs -nw

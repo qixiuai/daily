@@ -1,0 +1,12 @@
+
+from adappeaks import AdapPeaks
+from absl import flags
+from absl import app
+from absl import logging
+
+import pdb
+
+
+def analysis_ecg(ecg):
+    adappeaks = AdapPeaks(init_thres=0.7, cycle_min=200, cycle_max=750)
+    peaks = adapeak.find()

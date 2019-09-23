@@ -1,0 +1,11 @@
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  typedef struct RespirateDetector RespirateDetector;  
+  RespirateDetector* respiratedetector_construct();
+  int respiratedetector_run(RespirateDetector* resp, int value);
+  void respiratedetector_destruct(RespirateDetector* resp);
+#ifdef __cplusplus 
+}
+#endif

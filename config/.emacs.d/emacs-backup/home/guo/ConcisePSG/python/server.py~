@@ -1,0 +1,72 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import os
+import requests
+import pdb
+
+from flask import Flask, request
+from flask_restful import Api, abort, Resource
+from hashlib import sha256
+
+from pangu.session import Session
+import pangu.registry as registry
+
+app = Flask(__name__)
+api = Api(app)
+
+sess = Session()
+
+class PSGRest(Resource):
+
+    def get(self):
+        keys = request.args.keys()
+        ret = {}
+        for k in keys:
+            ret[k] = sess.db[k]
+        return ret
+
+    def _post_file(self, files):
+        raw = files['file'].read()
+        sess_id = sha256(raw)
+        data_path = os.path.join(string(sess_id), 'file')
+        sess.db[data_path] = raw
+
+    def _post_form(self, request):
+        try:
+            for key, value in request.form.items():
+                sess.db[key] = value
+        except:
+            abort(404, message="{} {} doesn't exist".format(key, value))
+        return
+
+    def post(self):
+        files = request.files
+        if len(files) > 0:
+            return self._post_file(files)
+        return self._post_form(request)
+
+    def put(self):
+        try:
+            for key, value in request.form.items():
+                sess.db[key] = value
+        except:
+            abort(404, message="{} {} doesn't exist".format(key, value))
+        return
+
+    def delete(self):
+        try:
+            for key, value in request.form.items():
+                sess.db.popitem(key, value)
+        except:
+            abort(404, message="{} {} doesn't exist".format(key, value))
+        return            
+
+
+api.add_resource(PSGRest, '/')
+
+
+if __name__ == '__main__':
+    app.run()

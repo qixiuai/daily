@@ -1,0 +1,6 @@
+
+myclass.so: myclass.cc
+	clang++ -fPIC -shared myclass.cc -o myclass.so
+
+class_user: class_user.cc
+	g++ class_user.cc -I. -L.  -lmyclass -ldl -o class_user

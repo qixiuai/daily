@@ -1,0 +1,15 @@
+% PeakBuffer
+
+classdef PeakBuffer < Buffer
+    methods
+        function buffer = updateFromBuffer(buffer, duration_buffer)
+            sz = duration_buffer.size;
+            dur = duration_buffer(end);
+            if (dur == sz)
+                p = 1;
+                buffer(2) = p;
+            end
+            buffer = buffer.push(0); % p is buffer(1)
+        end
+    end
+end

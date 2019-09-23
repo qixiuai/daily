@@ -1,0 +1,3 @@
+learn :	learn.cc Buffer.h SignalBuffer.h 
+	clang++ -std=c++17 learn.cc -I. -o learn -g
+	#./learn

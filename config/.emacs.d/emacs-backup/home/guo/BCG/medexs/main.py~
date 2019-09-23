@@ -1,0 +1,52 @@
+""" Analysis Medsis heart data """
+
+from absl import flags
+from absl import logging
+from absl import app
+
+import gin
+import numpy as np
+import untangle
+
+from BCG.findpeaks.findpeaks import FindPeaks
+
+import pdb
+
+
+def load_subject_ET(xml_path):
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+    for child in tree.iter(tag = "digits"):
+        print(child, child.tag)
+    print("Finished!")
+    pdb.set_trace()
+
+
+def load_subject(xml_path):
+    obj = untangle.parse(xml_path)
+    components = obj.AnnotatedECG.component.series.component.sequenceSet.component
+    dataset = {}
+    for component in components[1:]:
+        signal_name = component.sequence.code["code"]
+        signal_value_strs = component.sequence.value.digits.cdata.strip().split(' ')
+        signal_value = list(map(int, signal_value_strs))
+        dataset[signal_name] = signal_value
+    return dataset
+
+def load_subjects(data_dir):
+    pass
+
+def main(argv):
+    del argv
+    import os
+    dataset = load_subject(os.path.dirname(__file__) + "/data/1102211801010831285157606_陈惠文.xml")
+    signal = dataset["MDC_ECG_LEAD_I"]
+    obj = FindPeaks()
+    for val in signal:
+        obj.findpeaks(val)
+    print("print index of peaks")
+    for i in obj.index_of_peaks:
+        print(i)
+
+if __name__ == "__main__":
+    app.run(main)

@@ -1,0 +1,22 @@
+
+#include "gtest/gtest.h"
+
+#include "psg/api/api.h"
+
+#include <cpprest/json.h>
+
+
+TEST(ApiTest, Example) {
+  web::json::value client;
+  client[U("NumPlm")] = 1;
+  auto api = psg::api::Api();
+  ucout << api.get(client) << '\n';
+  EXPECT_EQ(1, 1);
+}
+
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+

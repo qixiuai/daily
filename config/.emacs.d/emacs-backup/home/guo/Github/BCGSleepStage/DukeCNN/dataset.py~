@@ -1,0 +1,56 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import tensorflow as tf
+
+import os
+import pdb
+import glob
+import peakutils
+import numpy as np
+from scipy.io import loadmat
+
+
+class RawDataset(object):
+    """ raw dataset """
+    
+    def __init__(self):
+        self.database_dir = "/home/guo/data/sleepstage/database/"
+        self.tmp_dir = "/home/guo/data/sleepstage/preprocess/"
+        self.model_dir = "/home/guo/data/sleepstage/BCGmodels/"
+
+
+class IsrucDataset(RawDataset):
+
+    def __init__(self):
+        super().__init__()
+        self._isruc_dir = self.database_dir + "ISRUC_Sleep/ExtractedChannels/"
+
+    def produce_heart_rates_example(self, file_path):
+        epochs = loadmat(file_path)['X2'] # ecg
+        num_epochs = epochs.shape[0]
+        for ind in range(num_epochs):
+            ecg = epochs[ind, :]
+            hrs = self.extract_heart_rates(ecg)
+            yield hrs
+            
+    def extract_heart_rates(self, ecg):
+        # TODO check correctness
+        ipks = peakutils.indexes(ecg, thres=0.75, min_dist=80)
+        hrs = 60 / (np.diff(ipks) / 200)
+        return hrs
+    
+    def __call__(self, ecg=True):
+        files = glob.glob(self._isruc_dir + "*/**.mat")
+        for file in files:
+            examples = self.produce_heart_rates_example(file)
+            for example in examples:
+                yield example
+
+if __name__ == '__main__':
+    for example in IsrucDataset()():
+        print(len(example))
+
+

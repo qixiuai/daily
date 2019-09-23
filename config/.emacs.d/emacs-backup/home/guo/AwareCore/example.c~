@@ -1,0 +1,23 @@
+#include <stdio.h>
+//#include "filter.h"
+
+extern void filter(double* y, double* x, int i, double* b, int, double*, int);
+
+int main() {
+  double b[] = {1, 2, 5};
+  double a[] = {1,3,3};
+  double x[] = {1, 2, 3.0, 4.0, 5.0};
+  double y[5];
+  //  fir_lowpass_500(x, y, 3);
+  for (int i=0; i<5; i++) {
+    filter(y, x, i, b, 3, a, 3);
+    printf("%f\t", y[i]);
+  }
+  
+  double xx[] = {1, 2, 3.0};
+  double yy[3];
+  //fir_lowpass_online_500(x, y, 3);
+    
+  return 0;
+}
+

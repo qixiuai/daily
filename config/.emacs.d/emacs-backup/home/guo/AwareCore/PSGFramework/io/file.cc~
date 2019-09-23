@@ -1,0 +1,18 @@
+#include "file.h"
+
+
+int main() {
+  
+  using namespace physio;
+
+
+  string filepath = "/home/guo/AwareCore/PSGFramework/data/ECG/Kemp_ECG.txt";
+  
+  auto data = dlmread<int>(filepath, skiprows=100);
+  
+  cout << "hello" << endl;
+
+  //  cout << data << endl;
+  
+  return 0;
+}

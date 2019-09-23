@@ -1,0 +1,25 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+from peakutils import indexes
+
+def qrs(signal):
+    ilocs = indexes(-signal,thres=0.8)
+    plt.plot(signal)
+    plt.plot(ilocs,signal[ilocs], 'o')
+    plt.show()
+
+def plot_data(filepath):
+    data = np.loadtxt(filepath, delimiter=',')
+#    signal = data[:,0]
+    plt.plot(data)
+    plt.show()
+
+def main(filepath):
+    data = np.loadtxt(filepath, delimiter=',')
+    det_siganl = data[:,1]
+    qrs(det_siganl)
+    
+if __name__ == '__main__':
+    filepath = "data.txt"
+    main(filepath)

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+data_dir=/home/guo/data/kaggle/OpenImage2019/
+train_images_dir=${data_dir}/raw/train/
+valid_images_dir=${data_dir}/raw/validation/
+test_images_dir=${data_dir}/test/
+
+hierarchy_file=${data_dir}/challenge-2019-label500-hierarchy.json
+
+train_bbox=${data_dir}/challenge-2019-train-detection-bbox
+train_image_labels=${data_dir}/challenge-2019-train-detection-human-imagelabels
+
+tf_module_dir=/home/guo/Github/tensorflow_models/research/object_detection/
+label_map_path=${tf_module_dir}/data/oid_v4_label_map.pbtxt
+
+model_dir=/home/guo/data/kaggle/pretrained/faster_rcnn_inception_resnet_v2_atrous_oid_v4_2018_12_12/
+#model_dir=/home/guo/data/kaggle/oid/tmp/
+#model_dir=/home/guo/data/kaggle/pretrained/raw/ssd_resnet101_v1_fpn_shared_box_predictor_oid_512x512_sync_2019_01_20/
+#pipeline_config_path=${model_dir}/pipeline.config
+ballet_data_dir="/home/guo/data/kaggle/oid/"
+pipeline_config_path=${ballet_data_dir}/config/faster_rcnn_inception_resnet_v2_atrous_oid_v4.config
+my_model_dir=${ballet_data_dir}/models/
+
+#tfobapi_module_dir=/home/guo/ob/ballet/tfobapi/
+
+python ${tf_module_dir}/model_main.py \
+       --pipeline_config_path=${pipeline_config_path} \
+       --model_dir=${my_model_dir} \
+       --alsologtostderr
+
+
+
+
+
+
+

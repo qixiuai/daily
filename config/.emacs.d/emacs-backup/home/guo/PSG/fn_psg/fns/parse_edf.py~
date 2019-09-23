@@ -1,0 +1,39 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from pangu.ops import ops
+import pangu.registry as registry
+
+from edfplus import Edfplus
+
+# session: based on hash file
+# file: filepath
+
+
+@registry.regiser_op
+class ParseEdf(ops.Operation):
+
+    def inputs(self):
+        return EdfFile
+
+    def outputs(self):
+        pass
+    
+    def body(self, data):
+        filepath = data[input_key]
+        with open(filepath, "rb") as f:
+            raw = f.read()
+            edf = Edfplus(raw)
+        data["num_signals"]  = edf.num_signals
+        data["signal_freqs"] = edf.signal_freqs
+        data["starttime"]    = edf.starttime
+        data["signal_names"] = edf.signal_names
+        data["signals"]      = edf.signals
+        return True
+
+
+
+
+

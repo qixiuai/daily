@@ -1,0 +1,268 @@
+// Tensorflow Core
+
+std::unique_ptr<FunctionLibraryRuntime>
+NewFunctionLibraryRuntime(const DeviceMgr* device_mgr, Env* env, Device* device,
+			  int graph_def_version, const FunctionLibraryDefinition* lib_def,
+			  thread::ThreadPool* thread_pool, const OptimizerOptions& optimizer_options,
+			  CustomKernelCreator custom_kernel_creator,
+			  ProcessFuncionLibraryRutime* parent);
+
+
+class FunctionLibraryDefinition : public OpRegistryInterface {
+public:
+  FunctionDef LookUp(string func);
+  
+private:
+  mutable mutext mu_;
+  const OpRegistryInterface* const default_registry_;
+
+  struct FunctionDefAndOpRegistration {
+    FunctionDefAndOpRegistration(const FunctionDef* fdef_in);
+    FunctionDef fdef;
+    OpRegistrationData op_registration_data;
+  };    
+    
+  gtl::FlatMap<string, std::unique_ptr<FunctionDefAndOpRegistration>>
+      function_defs_ GUARDED_BY(mu_);
+  
+};
+
+class OpRegistryInterface {
+  Status LoopUp(const string& op_type_name,
+		const OpRegistrationData** op_reg_data) const;
+  
+  Status LoopUpOpDef(const string& op_type_name, const OpDef** op_def) const;
+};
+
+class OpRegistry : public OpRegistryInterface {
+public:
+  void Register(const OpRegistrationDataFactory& op_data_factory);
+  static OpRegistry* Global();
+private:
+  mutable std::vector<OpRegistrationDataFactory> deferred_ GUARDED_BY(mu_);
+  mutable std::unordered_map<string, const OpRegistrationData*> registry_;
+};
+
+
+Status OpRegistry::LoopUp(const string& op_type_name,
+			  const OpRegistrationData** op_reg_data) {
+  {
+    tf_shared_lock l(mu_);
+    if (initialized_) {
+      if (const OpRegistrationData* res =
+	  glt::FindWithDefault(registry_, op_type_name, nullptr)) {
+	*op_reg_data = res;
+	return Status::OK():
+      }
+    }
+  }
+  return LoopUpSlow(op_type_name, op_reg_data);
+}
+
+//-------------------------------------------------------------------------
+class Node {
+  int id_;
+  int cost_id_;
+  NodeClass class_;
+  EdgeSet in_edges_;
+  EdgeSet out_edges_;
+  Graph* graph;  
+};
+
+class Edge {
+public:
+  Node* src() const;
+  Node* dst() const;
+private:
+  Node* src_;
+  Node* dst_;
+  int id_;
+  int src_output_;
+  int dst_input_;
+};
+
+class Graph {
+public:
+  void ToGraphDef(GraphDef* graph_def) const;
+
+private:
+  FunctionLibraryDefinition ops_;
+  core::Arena arena_;
+  std::vector<Node*> nodes_;
+  std::vector<Edge*> edges_;
+  
+  std::vector<Node*> free_nodes_;
+  std::vector<Node*> free_edges_;  
+};
+/*
+message AttrValue {
+  message ListValue {
+    repeated bytes s = 2;
+    repeated int64 i = 3;
+    repeated float f = 4;
+    repeated bool b = 5;
+    repeated DataType type = 6;
+    repeated TensorShapeProto shape = 7;
+    repeated TensorProto tensor = 8;
+    repeated NameAttrList func = 9;
+  }
+  oneof value {
+    bytes s = 2;
+    int64 i = 3;
+    float f = 4;
+    bool b = 5;
+    DataType type = 6;
+    TensorShapeProto shape = 7;
+    TensorProto tensor = 8;
+    ListValue list = 1;
+    NameAttrList func = 10;
+    string placeholder = 9;
+  }
+};
+*/
+message NodeDef {
+  string name = 1;
+  string op = 2;
+  repeated string input = 3;
+  string device = 4;
+  map<string, AttrValue> attr = 5;
+};
+
+message OpDef {
+  string name = 1;
+  message ArgDef {
+    string name = 1;
+    string description = 2;
+    DataType type = 3;
+    string type_attr = 4;
+    string number_attr = 5;
+    string type_list_attr = 6;
+    bool is_ref = 16;
+  };
+
+  message AttrDef {
+    string name = 1;
+    string type = 2;
+    AttrValue default_value = 3;
+    string description = 4;
+    bool has_minimum = 5;
+    int64 minimum = 6;
+    AttrValue allowed_values = 7;
+  };
+  
+  repeated AttrDef attr = 4;
+  OpDeprecation deprecation = 8;
+  string summary = 5;
+  string description = 6;
+  bool is_commutative = 18;
+  bool is_aggregate = 16;
+  bool is_stateful = 17;
+  bool allows_uninitialized_input = 19;
+};
+
+message FunctionDef {
+  OpDef signature = 1;
+  map<string, AttrValue> attr = 5;
+  repeated NodeDef node_def = 3;
+  map<string, string> ret = 4;
+  map<string, string> control_ret = 6;
+};
+
+message FunctionDefLibrary {
+  repeated FunctionDef function = 1;
+  repeated GradientDef gradient = 2;
+};
+
+message GraphDef {
+  repeated NodeDef node = 1;
+  FunctionDefLibrary library = 2;
+}
+
+Status ImportGraphDef(const ImportGraphDefOptions& opts,
+		      const GraphDef& gdef, Graph* g,
+		      ShapeRefiner* refiner,
+		      ImportGraphDefResults* results = nullptr);
+
+//-----------------op_kernel-------------------------------------
+Status CreateNonCachedKernel(Device* device, FunctionLibraryRuntime* flib,
+			     const NodeDef& ndef, int graph_def_verison,
+			     OpKernel** kernel) {
+  const auto device_type = DeviceType(device->attributes().device_type());
+  auto allocator = device->GetAllocator(AllocatorAttributes());
+  return CreateOpKernel(device_type, device, allocator, flib, ndef, graph_def_version, kernel);
+}
+
+Status CreateOpKernel(DeviceType device_type, DeviceBase* device, Allocator* allocator,
+		      FunctionLibraryRuntime* fib, const NodeDef& node_def,
+		      int graph_def_version, OpKernel** kernel);
+
+message KernelDef { };
+
+class OpKernelFactory {
+public:
+  virtual OpKernel* Create(OpKernelConstruction* context) = 0;
+  virtual ~OpKernelFactory() = default;
+};
+
+class OpKernelRegistrar {  };
+
+class OpKernelConstruction; // op_kernel.h
+
+struct KernelRegistration {
+  const KernelDef def;
+  const string kernel_class_name;
+  std::unique_ptr<kernel_factory::OpKernelFactory> factory;
+};
+
+
+// --------------- Executor-----------------------------------------------
+
+
+class Executor {
+public:
+  virtual ~Executor() {}
+  
+  struct Args {
+    //int64 step_id = 0;
+    Rendezvous* rendezvous = nullptr; 
+    //StepStatsCollectiorInterface* stats_collector = nullptr;
+    CallFrameInterface* call_frame = nullptr;
+    //CancellationManager* cancellation_manager = nullptr;
+    SessionState* session_state = nullptr;
+    string session_handle;
+    TensorStore* tensor_store = nullptr;
+    //ScopedStepContainer* step_container = nullptr;
+    //CollectiveExecutor* collective_executor = nullptr;
+    //bool sync_on_finish = false;
+    //typedef std::function<void()> Closure;
+    //typedef std::function<void(Closure)> Runner;
+    Runner runner = nullptr;
+  };
+  typedef std::function<void(const Status&)> DoneCallback;
+  virtual void RunAsync(const Args& args, DoneCallback done) = 0;
+};
+
+struct LocalExecutorParams {
+  Device* device;
+  FunctionLibraryRuntime* function_library = nullptr;
+  std::function<Status(const NodeDef&, OpKernel**)> create_kernel;
+  std::function<void(OpKernel*)> delete_kernel;
+};
+
+Status NewLocalExecutor(const LocalExecutorParams& params,
+			std::unique_ptr<const Graph> graph,
+			Executor** executor);
+
+
+
+
+
+
+}
+
+
+
+
+
+
+

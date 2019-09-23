@@ -1,0 +1,13 @@
+CC = clang++
+CCFLAGS = -std=c++17 -stdlib=libc++
+LDFLAGS = -L/home/guo/Github/llvm-svn/projects/libcxx/lib/
+
+spl : spl.o lexer.o
+	$(CC) $< -o $@
+	./spl
+
+{%.o} : {%.cc}
+	$(CC) -c {%.c} -o ${%.o}
+
+clean:
+	rm spl *.o

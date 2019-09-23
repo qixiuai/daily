@@ -1,0 +1,26 @@
+#ifndef _FINDPEAKS_
+#define _FINDPEAKS_
+
+#include <vector>
+#include <boost/circular_buffer.hpp>
+
+template <class T>
+using buffer = boost::circular_buffer<T>;
+
+using uint = unsigned int;
+
+class HeartPeakDetector {
+public:
+  HeartPeakDetector() = default;
+  HeartPeakDetector(float threshold, int min_dist);
+
+  std::vector<int> detect_signal(const std::vector<float>& ecg);
+
+private:
+  int Fz_ = 500;
+  int buffer_size_ = Fz_ * 3;
+  float threshold_ = 0.75;
+  int min_dist_ = 100;
+};
+
+#endif

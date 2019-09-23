@@ -1,0 +1,10 @@
+% NormalGamma Model
+
+classdef NormalGamma
+    properties
+        
+    end
+    methods
+        
+    end
+end

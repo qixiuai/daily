@@ -1,0 +1,9 @@
+
+
+// session is a bridge between framework and restapi
+class Session {
+public:
+  
+  
+  
+};

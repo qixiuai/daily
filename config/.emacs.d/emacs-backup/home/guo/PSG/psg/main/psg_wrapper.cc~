@@ -1,0 +1,63 @@
+
+#include "psg.h"
+
+extern "C" {
+
+  std::vector<int> stages;
+
+  void push_light(float light) {
+    physio::push_light(light);
+  }
+  void push_ecg(float ecg_la_ra) {
+    physio::push_ecg(ecg_la_ra);
+  }
+  void push_eeg(float eeg_f1_m2, float eeg_c3_m2, float eeg_c4_m1,
+		float eeg_f2_m1, float eeg_o1_m2, float eeg_o2_m1) {
+    physio::push_eeg(eeg_f1_m2, eeg_c3_m2, eeg_c4_m1, eeg_f2_m1, eeg_o1_m2, eeg_o2_m1);
+  }
+  void push_emg(float emg_pos_neg) {
+    physio::push_emg(emg_pos_neg);
+  }
+  void push_eog(float eog_e2_m2, float eog_e1_m2) {
+    physio::push_eog(eog_e2_m2, eog_e1_m2);
+  }
+  void push_leg(float leg_l, float leg_r) {
+    physio::push_leg(leg_l, leg_r);
+  }
+  void push_resp(float resp_abdomen, float resp_chest,
+		 float resp_pressure, float resp_thermal) {
+    physio::push_resp(resp_abdomen, resp_chest, resp_pressure, resp_thermal);
+  }
+  void push_sao2(float sao2_finger) {
+    physio::push_sao2(sao2_finger);
+  }
+  void push_trachea(float trachea_sound) {
+    physio::push_trachea(trachea_sound);
+  }
+
+  void set_end_of_signals() {
+    physio::set_end_of_signals();
+  }
+
+  bool is_end_of_stage() {
+    return physio::is_end_of_stage;
+  }
+
+  int fetch_stages_size() {
+    return physio::stages.size();
+  }
+  int fetch_stages(int idx) {
+    return physio::stages[idx];
+  }
+  
+  void PSG_init() {
+    physio::PSG_init();
+  }
+
+  void PSG_destroy() {
+    physio::PSG_destroy();
+    physio::stages.clear();
+  }
+
+
+}

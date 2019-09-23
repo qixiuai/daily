@@ -1,0 +1,36 @@
+
+import sys
+sys.path.append("/home/guo/Github/tensorflow_models/research/object_detection/")
+
+import tensorflow as tf
+from object_detection import model_lib
+from absl import app
+
+
+
+def main(unused_args):
+    del unused_args
+    data_dir = "/home/guo/ob/ballet/tfobapi/data/"
+    model_dir = data_dir + "model_dir"
+    config = tf.estimator.RunConfig(model_dir=model_dir)    
+
+    hparams = tf.contrib.training.HParams(load_pretrained=True)
+    #hparams = hparams.parse()
+    train_and_eval_dict = model_lib.create_estimator_and_inputs(
+        run_config=config,
+        hparams=hparams,
+        train_steps = 1,
+        sample_1_of_n_eval_examples = 1,
+        sample_1_of_n_eval_on_train_examples = 10,
+    )
+    
+    estimator = train_and_eval_dict['estimator']
+    train_input_fn = train_and_eval_dict['train_input_fn']
+    eval_input_fn = train_and_eval_dict['eval_input_fn']
+    eval_on_train_input_fn = train_and_eval_dict['eval_on_train_input_fn']
+    predict_input_fn = train_and_eval_dict['predict_input_fn']
+    train_steps = train_and_eval_dict['train_steps']
+    
+    
+if __name__ == '__main__':
+    app.run(main)

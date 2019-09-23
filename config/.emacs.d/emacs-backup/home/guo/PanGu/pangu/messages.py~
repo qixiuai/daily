@@ -1,0 +1,49 @@
+""" messages for data exchange among functions """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+
+class Message(object):
+    """
+    session_id: hash256(file)
+    filename / op1:0 / op2:1 / op3:0
+    """
+    def __init__(self, name):
+        self._name = name
+        self._reference_counts = 1
+        self._version = 0 # children >= parent
+
+    @property
+    def reference_counts(self):
+        return self._reference_counts
+
+    @property
+    def name(self):
+        """ op_name:  """
+        return self._name
+
+    @property
+    def version(self):
+        return self._version
+
+    def __item__(self, key):
+        return self.snapshots[self._version][key]
+
+    @property
+    def data(self):
+        return self.snapshots[self._version]
+    
+    @property
+    def snapshots(self):
+        """ save difference from base version """
+        snaps = { "_version": data }
+        raise NotImplementedError()
+    
+    
+
+
+    
+    
+    

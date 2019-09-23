@@ -1,0 +1,113 @@
+
+#include <iostream>
+#include <cstdlib>
+
+template <class T>
+class Vector {
+public:
+  Vector() {_data = nullptr; _len = 0; _capacity = 0;};
+  Vector(int n) {
+    _data = new T[n];
+    _len = 0;
+    _capacity = n;
+  }
+  
+  T operator[](int index) {
+    if (index >= _len)
+      std::cerr << "index out of bound\n";
+    return _data[index];
+  }
+
+  void push_back(int value) {
+    _data[_len] = value;
+    _len++;
+  }
+  
+  int size() {
+    return _len;
+  }
+
+  int capacity() {
+    return _capacity;
+  }
+
+  ~Vector() {
+    delete[] _data;
+  }
+  
+private:
+  T* _data;
+  int _len;
+  int _capacity;
+};
+
+class Sort;
+
+class RangeCountQuery {
+  
+};
+
+int binary_search(Vector<int>& data, int value) {
+  
+}
+
+int range_query(int* vec, int start, int end) {
+  int num_start = binary_search(vec, start);
+  int num_end = binary_search(vec, end);
+  return num_end - num_start;
+}
+
+Vector<int> merge(Vector<int>& left, Vector<int>& right) {
+  Vector<int> dst;
+  int left_n = left.size();
+  int right_n = right.size();
+  int ind_left = 0, ind_right = 0;
+  while (ind_left < left_n && ind_right < right_n) {
+    int left_value = left[ind_left];
+    int right_value = right[ind_right];
+    if (left_value < right_value) {
+      dst.push_back(left_value);
+      ind_left++;
+    } else {
+      dst.push_back(right_value);
+      ind_right++;
+    }
+  }
+  while (ind_left < left_n) {
+    int left_value = left[ind_left];
+    dst.push_back(left_value);
+    ind_left++;
+  }
+  while (ind_right < right_n) {
+    int right_value = right[ind_right];
+    dst.push_back(right_value);
+    ind_right++;
+  }
+  return dst;
+};
+
+Vector<int> merge_sort(Vector<int> data, int start, int end) {
+  if (start + 1 >= end)
+    return data;
+  int middle = (start + end) / 2;
+  auto left = merge_sort(data, start, middle);
+  auto right = merge_sort(data, middle, end);
+  auto result = merge(left, right);
+  return result;
+}
+
+
+int main() {
+  int n, m;
+  std::cin >> n >> m;
+  Vector<int> data(n);
+  for (int i = 0; i < n; i++)
+    std::cin >> data[i];
+  merge_sort(data, 0, n);
+  int start, end, value;
+  for (int i = 0; i < m; i++) {
+    std::cin >> start >> end;
+    value = range_query(data, start, end);
+    std::cout << value << "\n";
+  }
+}

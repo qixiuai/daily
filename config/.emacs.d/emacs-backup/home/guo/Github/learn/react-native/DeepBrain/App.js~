@@ -1,0 +1,60 @@
+import React, { Component } from 'react';
+import { AppRegistry, StyleSheet, Text, View } from 'react-native';
+
+
+class Blink extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { isShowingText: true };
+    setInterval( () => (
+      this.setState(previousState => (
+	{ isShowingText: !previousState.isShowingText }
+      ))
+    ), 1000);
+  }
+
+  render() {
+    if (!this.state.isShowingText) {
+      return null;
+    }
+    return (
+	<Text style={styles.bigblue}>{ this.props.text }</Text>
+    );
+  }
+  
+}
+
+export default class App extends Component {
+  render() {
+    return (
+	<View style={styles.container}>
+        <Text style={styles.red}> Hello World!</Text>
+	<Blink text="blink blink" />
+	</View>
+
+    );
+  }
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bigblue: {
+    color: 'blue',
+    fontWeight: 'bold',
+    fontSize: 40,
+  },
+  red: {
+    
+    fontSize: 50,
+    fontWeight: 'bold',
+
+  }
+});
+
+
+AppRegistry.registerComponent("DeepBrain", () => App);

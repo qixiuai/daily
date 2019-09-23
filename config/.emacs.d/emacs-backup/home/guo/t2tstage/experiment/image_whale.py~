@@ -1,0 +1,86 @@
+""" Image Whale problem """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import pandas as pd
+import gzip
+import os
+import random
+import numpy as np
+
+import tensorflow as tf
+from tensorflow.keras.preprocessing import image
+
+from tensor2tensor.data_generators import generator_utils
+from tensor2tensor.data_generators import image_utils
+from tensor2tensor.utils import registry
+
+
+_WHALE_DIR="/home/guo/data/kaggle/Whale/"
+
+_TRAIN_FILES = [
+    os.path.join(_WHALE_DIR, "train", filename)
+    for filename in os.listdir(_WHALE_DIR+"train") ]
+random.seed(2018)
+random.shuffle(_TRAIN_FILES)
+
+@registry.register_problem
+class ImageWhale(image_utils.Image2ClassProblem):
+    """ Image whale """
+
+    @property
+    def num_channels(self):
+        return 3
+
+    @property
+    def is_small(self):
+        return True
+
+    @property
+    def num_classes(self):
+        return len(self.raw_class_labels)
+
+    @property
+    def raw_class_labels(self):
+        df = pd.read_csv("/home/guo/data/kaggle/Whale/train.csv")
+        labels = np.unique(list(df['Id'])).tolist()
+        return labels
+    
+    @property
+    def class_labels(self):
+        return [str(i) for i in range(self.num_classes)]
+
+    @property
+    def train_shards(self):
+        return 10
+
+    def preprocess_example(self, example, mode, unused_hparams):
+        image = example["inputs"]
+        image = tf.keras.applications.imagenet_utils.preprocessing_input(image, mode='tf')
+        example["inputs"] = image
+        return example
+
+    def generator(self, data_dir, tmp_dir, is_training):
+        num_files = len(_TRAIN_FILES)
+        train_files = _TRAIN_FILES[:20000]
+        dev_files = _TRAIN_FILES[20000:]
+        files = train_files
+        df = pd.read_csv("/home/guo/data/kaggle/Whale/train.csv")
+        if not is_training:
+            files = dev_files
+        imgs, labels = [], []
+        for filepath in files:
+            filename = os.path.basename(filepath)
+            img = image.img_to_array(image.load_img(filepath, target_size=(100,100,3)))
+            label = df[df['Image'] == filename]['Id'].values[0]
+            imgs.append(img)
+            label_index = self.raw_class_labels.index(label)
+            labels.append(label_index)
+        return image_utils.image_generator(imgs, labels)
+
+    
+    
+
+
