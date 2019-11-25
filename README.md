@@ -1,5 +1,68 @@
 # daily
 
+## 11.25 - 12.1
+
+### 11.29 Friday
+- [ ] 
+- [ ] multi-scale tridenet
+
+### 11.28 Tursday
+- [ ] eigen
+- [ ] centernet 0.40
+
+### 11.27 Wedsday
+- [ ] circular ost
+- [ ] uda >= 0.35
+
+### 11.26 Tuesday
+- [ ] order statistical tree
+- [ ] randaug >= 0.30
+
+### 11.25 Mon
+- [ ] red black tree
+- [ ] detectron2 baseline
+
+### 11.14 - 11.20
+- [ ] 
+
+### 11.11
+- [ ] PSG C++
+  - [ ] supports
+	- [ ] del edf file
+    - [ ] filters
+    - [ ] parameter ip and port
+	- [ ] add schedule
+  - [ ] analysis performance
+	- [ ] resp event parallel
+	- [ ] stage unit refactor : global object
+	- [ ] del part session not all
+
+- Base
+  - Inferface
+  - Context, NameScope
+  - Module[stateful, cache results]
+	- analysis units: Light, Stage, Resp ...
+	- report units: Stage, Resp, Leg ...
+  - Modules: Parallel or Serial
+  - SerialModules: level 0, 1, 3, 3 4 ...; [0, 1(1, 2), 2, 3]
+  - Server
+
+- level
+  - [0, 1, 2(2,2), 3, 4]
+  - [0, 1, 2(2,3), 3, 4]
+  - [0, 1, 3(2,3), 3, 4]
+  - [0, 1, 3(2,3), 4, 4]
+  - [0, 1, 3(2,3), 4, 5]
+  - [0, 1, 4(4,3), 4, 5]
+  - [0, 1, 4(4,3), 5, 5]
+  - [0, 1, 4(4,3), 5, 6]
+
+
+- [ ] UDA Framework
+  - [ ] dataset
+  - [ ] model
+  - [ ] gin conf interface
+
 ### 9.28 Saturday
 - [ ] find why models bad and how to make it better
 - [ ] a state of art model
